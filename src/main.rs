@@ -664,6 +664,52 @@ pub fn longest_consecutive(mut nums: Vec<i32>) -> i32 {
     ans
 }
 
+pub fn final_value_after_operations(operations: Vec<String>) -> i32 {
+    operations
+        .iter()
+        .fold(0, |acc, x| if x.contains('+') { acc + 1 } else { acc - 1 })
+}
+
+pub fn split_array(nums: Vec<i32>, k: i32) -> i32 {
+    use std::collections::HashMap;
+    let mut presums = vec![0];
+    for num in &nums {
+        presums.push(presums[presums.len() - 1] + *num);
+    }
+
+    let mut cache = HashMap::new();
+
+    fn dp(
+        nums: &[i32],
+        presums: &[i32],
+        cache: &mut HashMap<(usize, i32), i32>,
+        i: usize,
+        k: i32,
+    ) -> i32 {
+        if k == 1 {
+            return presums[presums.len() - 1] - presums[i];
+        }
+
+        if let Some(ans) = cache.get(&(i, k)) {
+            return *ans;
+        }
+
+        let mut best = i32::MAX;
+        for j in i..=nums.len() - k as usize {
+            let curr = nums[j] + presums[j] - presums[i];
+            if curr > best {
+                break;
+            }
+            best = best.min(std::cmp::max(curr, dp(nums, presums, cache, j + 1, k - 1)));
+        }
+
+        cache.insert((i, k), best);
+        best
+    }
+
+    dp(&nums, &presums, &mut cache, 0, k)
+}
+
 fn main() {
-    println!("{}", longest_consecutive(vec![100, 4, 200, 1, 3, 2]));
+    println!("{}", split_array(vec![7, 2, 5, 10, 8], 2));
 }
