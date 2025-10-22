@@ -734,6 +734,34 @@ pub fn test_sparse_vec(nums1: Vec<i32>, nums2: Vec<i32>) -> i32 {
     v1.dot_product(v2)
 }
 
+pub fn max_frequency(mut nums: Vec<i32>, k: i32, num_operations: i32) -> i32 {
+    nums.sort_unstable();
+    let mut counter = std::collections::HashMap::new();
+    let mut targets = std::collections::HashSet::new();
+    for num in &nums {
+        targets.insert(*num);
+        targets.insert(*num - k);
+
+        *counter.entry(*num).or_insert(0) += 1;
+    }
+
+    let mut targets: Vec<i32> = targets.into_iter().collect();
+    targets.sort_unstable();
+
+    let mut ans = 0;
+    for target in targets {
+        let l = nums.partition_point(|x| *x < target - k) as i32;
+        let r = nums.partition_point(|x| *x <= target + k) as i32 - 1;
+
+        if let Some(val) = counter.get(&target) {
+            ans = ans.max((num_operations + val).min(r - l + 1));
+        } else {
+            ans = ans.max(num_operations.min(r - l + 1));
+        }
+    }
+    ans
+}
+
 fn main() {
-    println!("{}", split_array(vec![7, 2, 5, 10, 8], 2));
+    println!("{}", max_frequency(vec![5, 11, 20, 20], 5, 1));
 }
