@@ -710,6 +710,30 @@ pub fn split_array(nums: Vec<i32>, k: i32) -> i32 {
     dp(&nums, &presums, &mut cache, 0, k)
 }
 
+struct SparseVector {
+    sparse_vec: Vec<i32>,
+}
+
+impl SparseVector {
+    const fn new(nums: Vec<i32>) -> Self {
+        Self { sparse_vec: nums }
+    }
+
+    // Return the dotProduct of two sparse vectors
+    fn dot_product(&self, vec: Self) -> i32 {
+        vec.sparse_vec
+            .iter()
+            .zip(self.sparse_vec.iter())
+            .fold(0, |acc, x| acc + (x.0 * x.1))
+    }
+}
+
+pub fn test_sparse_vec(nums1: Vec<i32>, nums2: Vec<i32>) -> i32 {
+    let v1 = SparseVector::new(nums1);
+    let v2 = SparseVector::new(nums2);
+    v1.dot_product(v2)
+}
+
 fn main() {
     println!("{}", split_array(vec![7, 2, 5, 10, 8], 2));
 }
