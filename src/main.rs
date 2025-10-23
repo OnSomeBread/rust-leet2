@@ -762,6 +762,97 @@ pub fn max_frequency(mut nums: Vec<i32>, k: i32, num_operations: i32) -> i32 {
     ans
 }
 
+pub fn has_same_digits(s: String) -> bool {
+    let mut nums: Vec<u8> = s.as_bytes().iter().map(|x| x - b'0').collect();
+    let n = nums.len();
+    for i in 0..n - 2 {
+        for i in 0..n - i - 1 {
+            nums[i] = (nums[i] + nums[i + 1]) % 10;
+        }
+    }
+
+    nums[0] == nums[1]
+}
+
+pub fn number_of_subarrays(nums: Vec<i32>, k: i32) -> i32 {
+    let mut ans = 0;
+    let mut l = 0;
+    let mut m;
+    let mut odd = 0;
+
+    for r in 0..nums.len() {
+        odd += nums[r] % 2;
+        while odd > k {
+            odd -= nums[l] % 2;
+            l += 1;
+        }
+
+        m = l;
+        if odd == k {
+            while nums[m] % 2 == 0 {
+                m += 1;
+            }
+
+            ans += m - l + 1;
+        }
+    }
+
+    ans as i32
+}
+
+pub fn subarray_sum(nums: Vec<i32>, k: i32) -> i32 {
+    let mut hm = std::collections::HashMap::new();
+    hm.insert(0, 1);
+    let mut ans = 0;
+    let mut curr = 0;
+    for num in nums {
+        curr += num;
+        if hm.contains_key(&(curr - k)) {
+            ans += hm.get(&(curr - k)).unwrap();
+        }
+        *hm.entry(curr).or_insert(0) += 1;
+    }
+    ans
+}
+
+pub fn judge_square_sum_hash_set(c: i32) -> bool {
+    let mut s = std::collections::HashSet::new();
+    for v in 0..=((c as f64).sqrt() as i32) {
+        s.insert(v * v);
+    }
+
+    for v in 0..=((c as f64).sqrt() as i32) {
+        if s.contains(&(c - v * v)) {
+            return true;
+        }
+    }
+    false
+}
+
+pub fn judge_square_sum(c: i32) -> bool {
+    let mut l = 0;
+    let mut r = (c as f64).sqrt() as i64;
+    let c = c as i64;
+
+    while l <= r {
+        match (l * l + r * r).cmp(&c) {
+            std::cmp::Ordering::Equal => return true,
+            std::cmp::Ordering::Greater => r -= 1,
+            std::cmp::Ordering::Less => l += 1,
+        }
+    }
+
+    false
+}
+
+pub fn sum_of_squares(nums: Vec<i32>) -> i32 {
+    let n = nums.len();
+    nums.iter()
+        .enumerate()
+        .filter_map(|(idx, val)| n.is_multiple_of(idx + 1).then_some(val * val))
+        .sum()
+}
+
 fn main() {
-    println!("{}", max_frequency(vec![5, 11, 20, 20], 5, 1));
+    println!("{}", judge_square_sum(3));
 }
