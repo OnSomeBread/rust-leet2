@@ -853,6 +853,24 @@ pub fn sum_of_squares(nums: Vec<i32>) -> i32 {
         .sum()
 }
 
+pub fn diameter_of_binary_tree(root: Option<Rc<RefCell<TreeNode>>>) -> i32 {
+    fn dfs(curr: Option<Rc<RefCell<TreeNode>>>, ans: &mut i32) -> i32 {
+        if let Some(curr) = curr {
+            let l = dfs(curr.borrow().left.clone(), ans);
+            let r = dfs(curr.borrow().right.clone(), ans);
+
+            *ans = (*ans).max(l + r);
+
+            return l.max(r) + 1;
+        }
+        0
+    }
+
+    let mut ans = 0;
+    let _ = dfs(root, &mut ans);
+    ans
+}
+
 fn main() {
     println!("{}", judge_square_sum(3));
 }
