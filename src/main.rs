@@ -2,6 +2,8 @@
 
 use std::{cell::RefCell, rc::Rc};
 
+use tracing::info;
+
 #[allow(unused)]
 macro_rules! vecvec {
     () => {
@@ -872,5 +874,8 @@ pub fn diameter_of_binary_tree(root: Option<Rc<RefCell<TreeNode>>>) -> i32 {
 }
 
 fn main() {
-    println!("{}", judge_square_sum(3));
+    let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
+    tracing_subscriber::fmt().with_writer(non_blocking).init();
+
+    info!("{}", judge_square_sum(3));
 }

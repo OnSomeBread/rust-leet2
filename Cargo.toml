@@ -2,3 +2,8 @@
 name = "leet2"
 version = "0.1.0"
 edition = "2024"
+
+[dependencies]
+tracing = "0.1.41"
+tracing-subscriber = "0.3.20"
+tracing-appender = "0.2.3"
