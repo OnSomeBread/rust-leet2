@@ -873,9 +873,33 @@ pub fn diameter_of_binary_tree(root: Option<Rc<RefCell<TreeNode>>>) -> i32 {
     ans
 }
 
+pub fn next_beautiful_number(n: i64) -> i64 {
+    for i in n + 1..1e10 as i64 {
+        let mut counter = std::collections::HashMap::new();
+        for digit in i.to_string().chars() {
+            *counter.entry(digit).or_insert(0) += 1;
+        }
+
+        if i.to_string().chars().all(|digit| {
+            counter
+                .get(&digit)
+                .is_some_and(|val| *val == digit as u8 - b'0')
+        }) {
+            return i;
+        }
+    }
+
+    -1
+}
+
+pub fn total_money(n: i32) -> i32 {
+    (0..n).fold(0, |acc, x| acc + x % 7 + x / 7 + 1)
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    info!("{}", judge_square_sum(3));
+    info!("{}", 1e9);
+    info!("{:?}", next_beautiful_number(1_000_000_000));
 }
