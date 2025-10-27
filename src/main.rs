@@ -896,10 +896,132 @@ pub fn total_money(n: i32) -> i32 {
     (0..n).fold(0, |acc, x| acc + x % 7 + x / 7 + 1)
 }
 
+pub fn number_of_beams(bank: Vec<String>) -> i32 {
+    let lasers: Vec<usize> = bank
+        .iter()
+        .map(|x| x.chars().filter(|x| *x == '1').count())
+        .collect();
+
+    let mut prev = 0;
+    let mut ans = 0;
+
+    for r in lasers {
+        if r == 0 {
+            continue;
+        }
+
+        ans += prev * r;
+        prev = r;
+    }
+
+    ans as i32
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum NestedInteger {
+    Int(i32),
+    List(Vec<NestedInteger>),
+}
+
+pub fn depth_nested_int(nested_list: &[NestedInteger], depth: i32) -> i32 {
+    let mut s = 0;
+    for value in nested_list {
+        if let NestedInteger::Int(num) = value {
+            s += num * depth;
+        } else if let NestedInteger::List(nums) = value {
+            s += depth_nested_int(nums, depth + 1);
+        }
+    }
+    s
+}
+
+pub fn depth_sum(nested_list: Vec<NestedInteger>) -> i32 {
+    let mut s = 0;
+    for value in nested_list {
+        if let NestedInteger::Int(num) = value {
+            s += num;
+        } else if let NestedInteger::List(nums) = value {
+            s += depth_nested_int(&nums, 2);
+        }
+    }
+    s
+}
+
+pub fn reordered_power_of2(n: i32) -> bool {
+    let mut digits = vec![0; 10];
+    for digit in n.to_string().chars() {
+        digits[(digit as u8 - b'0') as usize] += 1;
+    }
+
+    let mut ans = 1;
+    while ans < 1e9 as i32 {
+        let mut sub_digits = vec![0; 10];
+        for digit in ans.to_string().chars() {
+            sub_digits[(digit as u8 - b'0') as usize] += 1;
+        }
+
+        if digits == sub_digits {
+            return true;
+        }
+
+        ans <<= 1;
+    }
+
+    false
+}
+
+pub fn find_diagonal_order(mat: Vec<Vec<i32>>) -> Vec<i32> {
+    let mut ans = vec![];
+    let m = mat.len();
+    let n = mat[0].len();
+    for i in 0..m {
+        for j in 0..n {
+            if i % 2 == 0 {
+                ans.push(mat[i - j][j]);
+            }
+            // else {
+            //     ans.push(mat[i][j]);
+            // }
+        }
+    }
+    ans
+}
+
+pub fn min_cost(basket1: Vec<i32>, basket2: Vec<i32>) -> i64 {
+    use std::collections::HashMap;
+    let mut hm = HashMap::new();
+    let mut smallest = i32::MAX / 2;
+    for item in basket1 {
+        *hm.entry(item).or_insert(0) += 1;
+        smallest = smallest.min(item);
+    }
+    for item in basket2 {
+        *hm.entry(item).or_insert(0) -= 1;
+        smallest = smallest.min(item);
+    }
+
+    let mut combine = vec![];
+    for (key, value) in hm {
+        if value % 2 == 1 {
+            return -1;
+        }
+
+        combine.extend(vec![key; (i32::abs(value) / 2) as usize]);
+    }
+    combine.sort_unstable();
+
+    let mut ans = 0;
+    #[allow(clippy::needless_range_loop)]
+    for i in 0..combine.len() / 2 {
+        ans += std::cmp::min(smallest * 2, combine[i]) as i64;
+    }
+
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    info!("{}", 1e9);
-    info!("{:?}", next_beautiful_number(1_000_000_000));
+    info!("{:?}", min_cost(vec![4, 2, 2, 2], vec![1, 4, 1, 2]));
 }
