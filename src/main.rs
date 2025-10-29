@@ -1019,9 +1019,102 @@ pub fn min_cost(basket1: Vec<i32>, basket2: Vec<i32>) -> i64 {
     ans
 }
 
+pub fn count_valid_selections(nums: Vec<i32>) -> i32 {
+    let s: i32 = nums.iter().sum();
+    let mut ans = 0;
+    let mut left = 0;
+    for num in nums {
+        if num != 0 {
+            left += num;
+            continue;
+        }
+
+        let right = s - left;
+        if left == right || left + 1 == right {
+            ans += 1;
+        }
+        if left == right || left == right + 1 {
+            ans += 1;
+        }
+    }
+
+    ans
+}
+
+pub const fn smallest_number(n: i32) -> i32 {
+    let mut ans = 1;
+    let mut i = 1;
+
+    while ans < n {
+        ans |= 1 << i;
+        i += 1;
+    }
+
+    ans
+}
+
+pub fn smallest_number_not_const(n: i32) -> i32 {
+    let mut ans = 1;
+    for i in 1..32 {
+        if ans >= n {
+            break;
+        }
+        ans |= 1 << i;
+    }
+
+    ans
+}
+
+pub fn num_jewels_in_stones(jewels: String, stones: String) -> i32 {
+    let hs: std::collections::HashSet<char> = jewels.chars().collect();
+    stones.chars().filter(|x| hs.contains(x)).count() as i32
+}
+
+pub fn last_stone_weight(stones: Vec<i32>) -> i32 {
+    let mut bh: std::collections::BinaryHeap<i32> = stones.into_iter().collect();
+
+    while bh.len() > 1 {
+        let s1 = bh.pop().unwrap();
+        let s2 = bh.pop().unwrap();
+        if s1 > s2 {
+            bh.push(s1 - s2);
+        }
+    }
+
+    bh.pop().unwrap_or(0)
+}
+
+pub fn is_possible_to_split(nums: Vec<i32>) -> bool {
+    let mut hm = std::collections::HashMap::new();
+    for num in nums {
+        *hm.entry(num).or_insert(0) += 1;
+    }
+
+    hm.values().all(|x| *x <= 2)
+}
+
+pub fn dice_rolls(dice: i32, total: i32) -> i32 {
+    let (n, m) = (dice as usize, total as usize);
+    let mut dp = vec![vec![0; m]; n];
+    #[allow(clippy::needless_range_loop)]
+    for i in 0..6 {
+        dp[0][i] = 1;
+    }
+
+    for i in 1..n {
+        for j in 0..m {
+            dp[i][j] = (0.max(j as i32 - 6) as usize..j)
+                .map(|x| dp[i - 1][x])
+                .sum();
+        }
+    }
+
+    dp[n - 1][m - 1]
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    info!("{:?}", min_cost(vec![4, 2, 2, 2], vec![1, 4, 1, 2]));
+    info!("{:?}", dice_rolls(10, 28));
 }
