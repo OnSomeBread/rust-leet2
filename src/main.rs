@@ -1112,9 +1112,90 @@ pub fn dice_rolls(dice: i32, total: i32) -> i32 {
     dp[n - 1][m - 1]
 }
 
+pub fn min_number_operations(target: Vec<i32>) -> i32 {
+    let mut ans = target[0];
+    for i in 1..target.len() {
+        ans += 0.max(target[i] - target[i - 1]);
+    }
+
+    ans
+}
+
+pub fn climb_stairs(n: i32) -> i32 {
+    let mut dp = vec![0; (n + 1) as usize];
+    dp[0] = 1;
+    dp[1] = 2;
+
+    for i in 2..dp.len() {
+        dp[i] = dp[i - 1] + dp[i - 2];
+    }
+
+    dp[(n + 1) as usize]
+}
+
+pub fn can_visit_all_rooms(rooms: Vec<Vec<i32>>) -> bool {
+    let mut adj_list = vec![vec![]; rooms.len()];
+    for (i, room) in rooms.iter().enumerate() {
+        for key in room {
+            adj_list[i].push(*key);
+        }
+    }
+
+    let mut st = vec![0];
+    let mut seen = vec![false; rooms.len()];
+    while let Some(room) = st.pop() {
+        if seen[room] {
+            continue;
+        }
+        seen[room] = true;
+
+        for next_room in &adj_list[room] {
+            st.push(*next_room as usize);
+        }
+    }
+
+    seen.iter().all(|x| *x)
+}
+
+pub fn length_of_lis(nums: Vec<i32>) -> i32 {
+    let mut dp = vec![1; nums.len()];
+
+    for i in 0..nums.len() {
+        let mut best = 0;
+        for j in 0..i {
+            if nums[i] > nums[j] {
+                best = best.max(dp[j]);
+            }
+        }
+
+        dp[i] = best + 1;
+    }
+    *dp.iter().max().unwrap_or(&0)
+}
+
+pub fn box_stacking_max_height(mut cuboids: Vec<Vec<i32>>) -> i32 {
+    cuboids.sort_unstable_by_key(|x| x[0]);
+    let mut dp: Vec<i32> = cuboids.iter().map(|x| x[2]).collect();
+
+    for i in 0..cuboids.len() {
+        let mut best = 0;
+        for j in 0..i {
+            if cuboids[i][1] >= cuboids[j][1] {
+                best = best.max(dp[j]);
+            }
+        }
+        dp[i] += best;
+    }
+
+    *dp.iter().max().unwrap_or(&0)
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    info!("{:?}", dice_rolls(10, 28));
+    info!(
+        "{:?}",
+        box_stacking_max_height(vecvec![[50, 45, 20], [95, 37, 53], [45, 23, 12]])
+    );
 }
