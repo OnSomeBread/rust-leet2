@@ -1190,6 +1190,107 @@ pub fn box_stacking_max_height(mut cuboids: Vec<Vec<i32>>) -> i32 {
     *dp.iter().max().unwrap_or(&0)
 }
 
+pub fn longest_common_subsequence(text1: String, text2: String) -> i32 {
+    let t1: Vec<u8> = text1.chars().map(|x| x as u8).collect();
+    let t2: Vec<u8> = text2.chars().map(|x| x as u8).collect();
+    let m = t1.len();
+    let n = t2.len();
+    let mut dp = vec![vec![0; n + 1]; m + 1];
+
+    for i in 1..=m {
+        for j in 1..=n {
+            if t1[i - 1] == t2[j - 1] {
+                dp[i][j] = dp[i - 1][j - 1] + 1;
+            } else {
+                dp[i][j] = dp[i][j - 1].max(dp[i - 1][j]);
+            }
+        }
+    }
+
+    dp[m][n]
+}
+
+pub fn get_sneaky_numbers(nums: Vec<i32>) -> Vec<i32> {
+    let mut found = std::collections::HashSet::new();
+    let mut ans = vec![];
+    for num in nums {
+        if found.contains(&num) {
+            ans.push(num);
+            if ans.len() == 2 {
+                break;
+            }
+        }
+        found.insert(num);
+    }
+    ans
+}
+
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct ListNode {
+    pub val: i32,
+    pub next: Option<Box<ListNode>>,
+}
+
+impl ListNode {
+    #[inline]
+    const fn new(val: i32) -> Self {
+        Self { next: None, val }
+    }
+}
+
+// pub fn modified_list(nums: Vec<i32>, mut head: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
+//     let hs: std::collections::HashSet<i32> = nums.into_iter().collect();
+//     let mut dummy = Box::new(ListNode::new(-1));
+//     let mut dummy_ptr = dummy.as_mut();
+
+//     let mut prev: Option<Box<ListNode>> = None;
+//     let mut ptr = head.as_mut().unwrap().as_mut();
+//     while let Some(mut next) = ptr.next {
+//         if !hs.contains(&next.val) {
+//             ptr = next.next.as_mut().unwrap().as_mut();
+//         } else {
+//             ptr = &mut next;
+//         }
+//     }
+
+//     dummy.next
+// }
+
+pub fn modified_list(nums: Vec<i32>, mut head: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
+    let set: std::collections::HashSet<_> = nums.into_iter().collect();
+
+    while matches!(head.as_ref(), Some(node) if set.contains(&node.val)) {
+        head = head.take().unwrap().next;
+    }
+
+    let mut current = head.as_mut();
+    while let Some(node) = current {
+        while matches!(node.next.as_ref(), Some(next) if set.contains(&next.val)) {
+            node.next = node.next.take().unwrap().next;
+        }
+        current = node.next.as_mut();
+    }
+
+    head
+}
+
+pub fn modified_list_copy(nums: Vec<i32>, head: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
+    let hs: std::collections::HashSet<_> = nums.into_iter().collect();
+    let mut dummy = Box::new(ListNode::new(-1));
+    let mut dummy_ptr = dummy.as_mut();
+
+    let mut ptr = head;
+    while let Some(next) = ptr {
+        if !hs.contains(&next.val) {
+            dummy_ptr.next = Some(Box::new(ListNode::new(next.val)));
+            dummy_ptr = dummy_ptr.next.as_mut().unwrap().as_mut();
+        }
+        ptr = next.next;
+    }
+
+    dummy.next
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
