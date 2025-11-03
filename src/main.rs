@@ -414,8 +414,8 @@ pub fn k_smallest_pairs(nums1: Vec<i32>, nums2: Vec<i32>, k: i32) -> Vec<Vec<i32
 struct Node {
     key: i32,
     value: i32,
-    next: Option<Rc<RefCell<Node>>>,
-    prev: Option<Rc<RefCell<Node>>>,
+    next: Option<Rc<RefCell<Self>>>,
+    prev: Option<Rc<RefCell<Self>>>,
 }
 
 struct LRUCache {
@@ -516,8 +516,8 @@ pub fn test_lru_cache() {
 #[derive(Debug, PartialEq, Eq)]
 pub struct TreeNode {
     pub val: i32,
-    pub left: Option<Rc<RefCell<TreeNode>>>,
-    pub right: Option<Rc<RefCell<TreeNode>>>,
+    pub left: Option<Rc<RefCell<Self>>>,
+    pub right: Option<Rc<RefCell<Self>>>,
 }
 
 impl TreeNode {
@@ -920,7 +920,7 @@ pub fn number_of_beams(bank: Vec<String>) -> i32 {
 #[derive(Debug, PartialEq, Eq)]
 pub enum NestedInteger {
     Int(i32),
-    List(Vec<NestedInteger>),
+    List(Vec<Self>),
 }
 
 pub fn depth_nested_int(nested_list: &[NestedInteger], depth: i32) -> i32 {
@@ -1228,7 +1228,7 @@ pub fn get_sneaky_numbers(nums: Vec<i32>) -> Vec<i32> {
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct ListNode {
     pub val: i32,
-    pub next: Option<Box<ListNode>>,
+    pub next: Option<Box<Self>>,
 }
 
 impl ListNode {
@@ -1291,12 +1291,413 @@ pub fn modified_list_copy(nums: Vec<i32>, head: Option<Box<ListNode>>) -> Option
     dummy.next
 }
 
+pub fn count_key_changes(s: String) -> i32 {
+    let letters: Vec<char> = s.chars().collect();
+    let mut prev = letters[0].to_ascii_lowercase();
+    let mut ans = 0;
+    for letter in letters.iter().skip(1) {
+        if letter.to_ascii_lowercase() != prev {
+            prev = letter.to_ascii_lowercase();
+            ans += 1;
+        }
+    }
+    ans
+}
+
+pub fn differ_by_one(dict: Vec<String>) -> bool {
+    let dict = dict
+        .into_iter()
+        .map(|x| x.chars().collect::<Vec<char>>())
+        .collect::<Vec<Vec<char>>>();
+    let n = dict.len();
+    for i in 0..n {
+        for j in i + 1..n {
+            let mut diff = 0;
+            #[allow(clippy::needless_range_loop)]
+            for k in 0..dict[i].len() {
+                if dict[i][k] != dict[j][k] {
+                    diff += 1;
+                }
+                if diff >= 2 {
+                    break;
+                }
+            }
+            if diff == 1 {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+pub fn input_binary_search() {
+    info!("input low point");
+    let mut l;
+    loop {
+        let mut low_point = String::new();
+        if std::io::stdin().read_line(&mut low_point).is_ok()
+            && let Ok(val) = low_point.trim().parse::<f64>()
+        {
+            l = val;
+            break;
+        }
+    }
+
+    info!("input high point");
+    let mut r;
+    loop {
+        let mut high_point = String::new();
+        if std::io::stdin().read_line(&mut high_point).is_ok()
+            && let Ok(val) = high_point.trim().parse::<f64>()
+        {
+            r = val;
+            break;
+        }
+    }
+
+    while l < r && r - l > 1e-6 {
+        let mid = l.midpoint(r);
+        info!("\nlow value {}\nmid value {}\nhigh value {}", l, mid, r);
+        info!("enter 1 for lower or 2 for higher");
+
+        let dir;
+        loop {
+            let mut direction = String::new();
+            if std::io::stdin().read_line(&mut direction).is_ok()
+                && let Ok(val) = direction.trim().parse::<u8>()
+                && (val == 1 || val == 2)
+            {
+                dir = val == 2;
+                break;
+            }
+        }
+
+        if dir {
+            l = mid;
+        } else {
+            r = mid;
+        }
+    }
+
+    info!("final value {}", l);
+}
+
+pub fn count_unguarded(m: i32, n: i32, guards: Vec<Vec<i32>>, walls: Vec<Vec<i32>>) -> i32 {
+    use std::collections::HashSet;
+    let walls: HashSet<(i32, i32)> = walls.into_iter().map(|x| (x[0], x[1])).collect();
+    let guards: HashSet<(i32, i32)> = guards.into_iter().map(|x| (x[0], x[1])).collect();
+
+    let dirs = vec![(1, 0), (-1, 0), (0, 1), (0, -1)];
+    let bounds = |i: i32, j: i32| -> bool { i < m && j < n && i >= 0 && j >= 0 };
+
+    let mut visited = HashSet::new();
+    for (i, j) in &guards {
+        visited.insert((*i, *j));
+
+        for (di, dj) in &dirs {
+            let (mut ni, mut nj) = (i + *di, j + *dj);
+            while bounds(ni, nj) && !walls.contains(&(ni, nj)) && !guards.contains(&(ni, nj)) {
+                visited.insert((ni, nj));
+                ni += *di;
+                nj += *dj;
+            }
+        }
+    }
+
+    m * n - walls.len() as i32 - visited.len() as i32
+}
+
+pub fn find_all_recipes(
+    recipes: Vec<String>,
+    ingredients: Vec<Vec<String>>,
+    supplies: Vec<String>,
+) -> Vec<String> {
+    use std::collections::{HashSet, VecDeque};
+    let mut supplies: HashSet<String> = supplies.into_iter().collect();
+    let mut q: VecDeque<(usize, String)> = recipes.into_iter().enumerate().collect();
+
+    let mut ans = vec![];
+    let mut changed = i32::MAX;
+    while changed != 0 {
+        changed = 0;
+        let mut next = VecDeque::new();
+        while let Some((i, recipie)) = q.pop_front() {
+            if ingredients[i].iter().all(|x| supplies.contains(x)) {
+                changed += 1;
+                supplies.insert(recipie.clone());
+                ans.push(recipie);
+            } else {
+                next.push_back((i, recipie));
+            }
+        }
+        q = next;
+    }
+
+    ans
+}
+
+pub fn gcd_of_strings(str1: String, str2: String) -> String {
+    let m = str1.len();
+    let n = str2.len();
+    if str1.clone() + &str2 != str2 + &str1 {
+        return String::new();
+    }
+
+    const fn gcd(mut n: usize, mut m: usize) -> usize {
+        while m != 0 {
+            if m < n {
+                std::mem::swap(&mut m, &mut n);
+            }
+            m %= n;
+        }
+        n
+    }
+
+    str1.chars().take(gcd(m, n)).collect()
+
+    // let s1: Vec<char> = str1.chars().collect();
+    // let s2: Vec<char> = str2.chars().collect();
+
+    // let mut largest = String::new();
+    // let mut curr = vec![];
+
+    // for i in 0..s1.len().min(s2.len()) {
+    //     if s1[i] != s2[i] {
+    //         break;
+    //     }
+
+    //     curr.push(s1[i]);
+    //     if s1.len().is_multiple_of(curr.len()) && s2.len().is_multiple_of(curr.len()) {
+    //         let v1 = (0..s1.len()).all(|j| curr[j % curr.len()] == s1[j]);
+    //         let v2 = (0..s2.len()).all(|j| curr[j % curr.len()] == s2[j]);
+    //         if v1 && v2 {
+    //             largest = curr.iter().copied().collect();
+    //         }
+    //     }
+    // }
+
+    // largest
+}
+
+pub fn kids_with_candies(candies: Vec<i32>, extra_candies: i32) -> Vec<bool> {
+    let most_candy = *candies.iter().max().unwrap();
+    let mut result = vec![false; candies.len()];
+    for (i, candy) in candies.iter().enumerate() {
+        if *candy + extra_candies >= most_candy {
+            result[i] = true;
+        }
+    }
+    result
+}
+
+pub fn can_place_flowers(mut flowerbed: Vec<i32>, mut n: i32) -> bool {
+    for i in 0..flowerbed.len() {
+        if *flowerbed.get(i - 1).unwrap_or(&0) == 0
+            && flowerbed[i] == 0
+            && *flowerbed.get(i + 1).unwrap_or(&0) == 0
+        {
+            flowerbed[i] = 1;
+            n -= 1;
+        }
+    }
+    n <= 0
+}
+
+pub fn reverse_vowels(s: String) -> String {
+    let vowels: std::collections::HashSet<char> = String::from("aeiouAEIOU").chars().collect();
+    let mut s: Vec<char> = s.chars().collect();
+    let mut l = 0;
+    let mut r = s.len() - 1;
+
+    while l < r {
+        while l < r && !vowels.contains(&s[l]) {
+            l += 1;
+        }
+        while l < r && !vowels.contains(&s[r]) {
+            r -= 1;
+        }
+
+        s.swap(l, r);
+        l += 1;
+        r = r.saturating_sub(1);
+    }
+
+    s.into_iter().collect()
+
+    // let vowels: std::collections::HashSet<char> = String::from("aeiouAEIOU").chars().collect();
+    // let mut found = vec![];
+
+    // for letter in s.chars().rev() {
+    //     if vowels.contains(&letter) {
+    //         found.push(letter);
+    //     }
+    // }
+
+    // let mut ans = String::new();
+    // let mut found_idx = 0;
+    // for letter in s.chars() {
+    //     if vowels.contains(&letter) {
+    //         ans += &found[found_idx].to_string();
+    //         found_idx += 1;
+    //     } else {
+    //         ans += &letter.to_string();
+    //     }
+    // }
+    // ans
+}
+
+pub fn reverse_words(s: String) -> String {
+    s.split_whitespace().rev().collect::<Vec<&str>>().join(" ")
+}
+
+pub fn increasing_triplet(nums: Vec<i32>) -> bool {
+    let mut first = i32::MAX;
+    let mut second = i32::MAX;
+    for num in nums {
+        if first >= num {
+            first = num;
+        } else if second >= num {
+            second = num;
+        } else {
+            return true;
+        }
+    }
+    false
+}
+
+pub fn compress(chars: &mut [char]) -> i32 {
+    let mut i = 0;
+    let mut j = 0;
+    while i < chars.len() {
+        let mut count = 1;
+        let mut k = i + 1;
+        while k < chars.len() && chars[k] == chars[i] {
+            count += 1;
+            k += 1;
+        }
+        chars[j] = chars[i];
+        j += 1;
+        if count > 1 {
+            for digit in count.to_string().chars() {
+                chars[j] = digit;
+                j += 1;
+            }
+        }
+        i += count;
+    }
+    j as i32
+}
+
+pub fn max_operations(mut nums: Vec<i32>, k: i32) -> i32 {
+    nums.sort_unstable();
+    let mut l = 0;
+    let mut r = nums.len() - 1;
+    let mut ans = 0;
+    while l < r {
+        let val = nums[l] + nums[r];
+        match val.cmp(&k) {
+            std::cmp::Ordering::Equal => {
+                ans += 1;
+                l += 1;
+                r -= 1;
+            }
+            std::cmp::Ordering::Less => l += 1,
+            std::cmp::Ordering::Greater => r -= 1,
+        }
+    }
+
+    ans
+    // let mut hm = std::collections::HashMap::new();
+    // for num in &nums {
+    //     *hm.entry(*num).or_insert(0) += 1;
+    // }
+
+    // let mut ans = 0;
+    // for num in &nums {
+    //     if k - num == *num {
+    //         if let Some(val) = hm.get_mut(num)
+    //             && *val >= 2
+    //         {
+    //             *val -= 2;
+    //             ans += 1;
+    //         }
+    //     } else if *hm.get(&(k - num)).unwrap_or(&0) > 0 && *hm.get(num).unwrap() > 0 {
+    //         *hm.entry(k - *num).or_insert(0) -= 1;
+    //         *hm.entry(*num).or_insert(0) -= 1;
+    //         ans += 1;
+    //     }
+    // }
+
+    // ans
+}
+
+pub fn find_max_average(nums: Vec<i32>, k: i32) -> f64 {
+    let mut total = nums.iter().take(k as usize).sum::<i32>();
+    let mut ans: f64 = (total as f64) / (k as f64);
+    let mut l = 0;
+    #[allow(clippy::explicit_counter_loop)]
+    for num in nums.iter().skip(k as usize) {
+        total -= nums[l];
+        l += 1;
+        total += num;
+        ans = ans.max((total as f64) / (k as f64));
+    }
+
+    ans
+}
+
+pub fn largest_altitude(gain: Vec<i32>) -> i32 {
+    let mut ans = 0;
+    let mut curr = 0;
+    for g in gain {
+        curr += g;
+        ans = ans.max(curr);
+    }
+    ans
+}
+
+pub fn pivot_index(nums: Vec<i32>) -> i32 {
+    let mut presums = vec![nums[0]];
+    for num in nums.iter().skip(1) {
+        presums.push(*num + presums[presums.len() - 1]);
+    }
+
+    for i in 0..presums.len() {
+        let left = *presums.get(i - 1).unwrap_or(&0);
+        let right = presums[presums.len() - 1] - presums[i];
+        if left == right {
+            return i as i32;
+        }
+    }
+    -1
+}
+
+pub fn min_cost_climbing_stairs(cost: Vec<i32>) -> i32 {
+    let mut p1 = cost[0];
+    let mut p2 = cost[1];
+    let mut curr;
+
+    for c in cost.iter().skip(2) {
+        curr = p1.min(p2) + c;
+        p1 = p2;
+        p2 = curr;
+    }
+    p1.min(p2)
+
+    // let mut dp = vec![0; cost.len() + 1];
+    // dp[0] = cost[0];
+    // dp[1] = cost[1];
+
+    // for i in 2..cost.len() {
+    //     dp[i] = dp[i - 1].min(dp[i - 2]) + cost[i];
+    // }
+
+    // dp[cost.len() - 1].min(dp[cost.len() - 2])
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    info!(
-        "{:?}",
-        box_stacking_max_height(vecvec![[50, 45, 20], [95, 37, 53], [45, 23, 12]])
-    );
+    info!("{:?}", pivot_index(vec![1, 7, 3, 6, 5, 6]));
 }
