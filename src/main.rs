@@ -2,6 +2,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
+use itertools::Itertools;
 use tracing::info;
 
 #[allow(unused)]
@@ -1695,9 +1696,250 @@ pub fn min_cost_climbing_stairs(cost: Vec<i32>) -> i32 {
     // dp[cost.len() - 1].min(dp[cost.len() - 2])
 }
 
+pub fn min_cost_2(colors: String, needed_time: Vec<i32>) -> i32 {
+    let mut curr = 0;
+    let mut largest = 0;
+    let mut ans = 0;
+    let mut prev = ' ';
+    for (i, color) in colors.chars().enumerate() {
+        if color == prev {
+            largest = largest.max(needed_time[i]);
+            curr += needed_time[i];
+        } else {
+            ans += curr - largest;
+            largest = needed_time[i];
+            curr = needed_time[i];
+            prev = color;
+        }
+    }
+
+    ans + curr - largest
+}
+
+pub fn maximum_number_of_ones(width: i32, height: i32, side_length: i32, max_ones: i32) -> i32 {
+    let mut count = vec![];
+
+    for r in 0..side_length {
+        for c in 0..side_length {
+            count.push((1 + (width - c - 1) / side_length) * (1 + (height - r - 1) / side_length));
+        }
+    }
+
+    count.sort_unstable_by(|a, b| b.cmp(a));
+    count.iter().take(max_ones as usize).sum()
+}
+
+pub fn find_order(num_courses: i32, prerequisites: Vec<Vec<i32>>) -> Vec<i32> {
+    let num_courses = num_courses as usize;
+    let mut adj_list = vec![vec![]; num_courses];
+    let mut in_degree = vec![0; num_courses];
+
+    for preq in prerequisites {
+        let (course, required) = (preq[0] as usize, preq[1] as usize);
+        adj_list[required].push(course);
+        in_degree[course] += 1;
+    }
+
+    let mut visited = vec![false; num_courses];
+    let mut st: Vec<usize> = in_degree
+        .iter()
+        .enumerate()
+        .filter(|(_, x)| **x == 0)
+        .map(|(i, _)| i)
+        .collect();
+
+    let mut ans = vec![];
+    while let Some(course) = st.pop() {
+        if visited[course] {
+            continue;
+        }
+        visited[course] = true;
+        ans.push(course as i32);
+
+        for next in &adj_list[course] {
+            in_degree[*next] -= 1;
+            if in_degree[*next] == 0 {
+                st.push(*next);
+            }
+        }
+    }
+
+    if ans.len() != num_courses {
+        return vec![];
+    }
+
+    ans
+}
+
+pub fn min_time(n: i32, edges: Vec<Vec<i32>>, mut has_apple: Vec<bool>) -> i32 {
+    has_apple[0] = true;
+    let mut adj_list = vec![vec![]; n as usize];
+    let mut degrees = vec![0; n as usize];
+    for edge in edges {
+        let (curr, next) = (edge[0] as usize, edge[1] as usize);
+        adj_list[curr].push(next);
+        adj_list[next].push(curr);
+        degrees[curr] += 1;
+        degrees[next] += 1;
+    }
+
+    let mut st: std::collections::VecDeque<usize> = degrees
+        .iter()
+        .enumerate()
+        .filter(|(_, x)| **x == 1)
+        .map(|(i, _)| i)
+        .collect();
+
+    while let Some(top) = st.pop_front() {
+        if has_apple[top] {
+            continue;
+        }
+
+        for next in &adj_list[top] {
+            if degrees[*next] > 0 {
+                degrees[top] -= 1;
+                degrees[*next] -= 1;
+                if degrees[*next] == 1 {
+                    st.push_back(*next);
+                }
+            }
+        }
+    }
+
+    degrees.iter().sum()
+}
+
+pub fn find_x_sum(nums: Vec<i32>, k: i32, x: i32) -> Vec<i32> {
+    let mut hm = std::collections::HashMap::with_capacity(51);
+
+    for num in nums.iter().take(k as usize) {
+        *hm.entry(*num).or_insert(0) += 1;
+    }
+
+    let mut ans = vec![];
+    for i in 0..=(nums.len() - k as usize) {
+        let curr = hm
+            .iter()
+            .sorted_unstable_by(|a, b| b.1.cmp(a.1).then(b.0.cmp(a.0)))
+            .take(x as usize)
+            .fold(0, |acc, (key, value)| acc + *key * *value);
+
+        ans.push(curr);
+        *hm.entry(nums[i]).or_default() -= 1;
+        *hm.entry(*nums.get(i + k as usize).unwrap_or(&0))
+            .or_default() += 1;
+    }
+
+    ans
+}
+
+pub fn find_redundant_connection(edges: Vec<Vec<i32>>) -> Vec<i32> {
+    let mut uf: Vec<usize> = (0..edges.len()).collect();
+    let mut rank = vec![1; edges.len()];
+
+    fn union_find(uf: &[usize], mut curr: usize) -> usize {
+        while uf[curr] != curr {
+            curr = uf[curr];
+        }
+        curr
+    }
+
+    fn union_parents(uf: &mut [usize], rank: &mut [i32], x: usize, y: usize) -> bool {
+        let p1 = union_find(uf, x);
+        let p2 = union_find(uf, y);
+        if p1 == p2 {
+            return false;
+        }
+
+        if rank[p1] > rank[p2] {
+            rank[p2] += rank[p1];
+            uf[p1] = p2;
+        } else {
+            rank[p1] += rank[p2];
+            uf[p2] = p1;
+        }
+
+        true
+    }
+
+    for edge in edges {
+        if !union_parents(
+            &mut uf,
+            &mut rank,
+            edge[0] as usize - 1,
+            edge[1] as usize - 1,
+        ) {
+            return edge;
+        }
+    }
+
+    vec![]
+}
+
+pub fn accounts_merge(accounts: Vec<Vec<String>>) -> Vec<Vec<String>> {
+    let mut uf: Vec<_> = (0..accounts.len()).collect();
+    let mut rank = vec![1; accounts.len()];
+    fn find(uf: &[usize], mut i: usize) -> usize {
+        while uf[i] != i {
+            i = uf[i];
+        }
+        uf[i]
+    }
+
+    fn union_parents(uf: &mut [usize], rank: &mut [i32], a: usize, b: usize) -> bool {
+        let p1 = find(uf, a);
+        let p2 = find(uf, b);
+        if p1 == p2 {
+            return false;
+        }
+
+        if rank[p1] > rank[p2] {
+            rank[p2] += rank[p1];
+            uf[p1] = p2;
+        } else {
+            rank[p1] += rank[p2];
+            uf[p2] = p1;
+        }
+
+        true
+    }
+
+    use std::collections::HashMap;
+    let mut email_to_account = HashMap::new();
+    for (i, account) in accounts.iter().enumerate() {
+        for email in account.iter().skip(1) {
+            if let Some(val) = email_to_account.get(email) {
+                let _ = union_parents(&mut uf, &mut rank, i, *val);
+            } else {
+                email_to_account.insert(email, i);
+            }
+        }
+    }
+
+    let mut email_groups = HashMap::new();
+    for (key, value) in email_to_account {
+        (*email_groups
+            .entry(find(&uf, value))
+            .or_insert_with(Vec::new))
+        .push(key.to_owned());
+    }
+
+    let mut ans: Vec<Vec<String>> = vec![];
+    for (i, mut g) in email_groups {
+        g.sort_unstable();
+        ans.push(
+            std::iter::once(accounts[i][0].clone())
+                .chain(g.into_iter())
+                .collect(),
+        );
+    }
+
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    info!("{:?}", pivot_index(vec![1, 7, 3, 6, 5, 6]));
+    info!("{:?}", find_x_sum(vec![1, 1, 2, 2, 3, 4, 2, 3], 6, 2));
 }
