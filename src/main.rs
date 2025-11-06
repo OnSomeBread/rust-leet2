@@ -376,12 +376,6 @@ pub fn rotate(matrix: &mut [Vec<i32>]) {
     }
 }
 
-pub fn add_binary(a: String, b: String) -> String {
-    let n1 = u128::from_str_radix(&a, 2).unwrap();
-    let n2 = u128::from_str_radix(&b, 2).unwrap();
-    format!("{:b}", n1 + n2)
-}
-
 pub fn k_smallest_pairs(nums1: Vec<i32>, nums2: Vec<i32>, k: i32) -> Vec<Vec<i32>> {
     let mut ans = vec![];
     let mut pq = std::collections::BinaryHeap::new();
@@ -1809,7 +1803,7 @@ pub fn min_time(n: i32, edges: Vec<Vec<i32>>, mut has_apple: Vec<bool>) -> i32 {
     degrees.iter().sum()
 }
 
-pub fn find_x_sum(nums: Vec<i32>, k: i32, x: i32) -> Vec<i32> {
+pub fn find_x_sum_easy(nums: Vec<i32>, k: i32, x: i32) -> Vec<i32> {
     let mut hm = std::collections::HashMap::with_capacity(51);
 
     for num in nums.iter().take(k as usize) {
@@ -1937,9 +1931,161 @@ pub fn accounts_merge(accounts: Vec<Vec<String>>) -> Vec<Vec<String>> {
     ans
 }
 
+pub fn find_x_sum(nums: Vec<i32>, k: i32, x: i32) -> Vec<i64> {
+    use std::collections::{BTreeSet, HashMap};
+    let x = x as usize;
+    let k = k as usize;
+
+    let mut hm = HashMap::new();
+    for num in nums.iter().take(k) {
+        *hm.entry(*num).or_insert(0) += 1;
+    }
+
+    let init_values: Vec<(i32, i32)> = hm
+        .iter()
+        .map(|(&key, &value)| (value, key))
+        .sorted_unstable()
+        .rev()
+        .collect();
+
+    let mut curr = init_values
+        .iter()
+        .take(x)
+        .fold(0, |acc, (value, key)| acc + *value as i64 * *key as i64);
+
+    let mut largest: BTreeSet<(i32, i32)> = init_values
+        .iter()
+        .take(x)
+        .map(|(value, key)| (*value, *key))
+        .collect();
+
+    let mut smallest: BTreeSet<(i32, i32)> = init_values.into_iter().skip(x).collect();
+
+    let mut ans = vec![];
+    for i in k..nums.len() {
+        ans.push(curr);
+
+        let mut update = |key: i32, delta: i32| {
+            if let Some(val) = hm.get_mut(&key) {
+                let e = (*val, key);
+                if largest.contains(&e) {
+                    largest.remove(&e);
+                    curr -= *val as i64 * key as i64;
+                } else {
+                    smallest.remove(&e);
+                }
+            }
+
+            let e = hm.entry(key).or_default();
+            *e += delta;
+            if *e == 0 {
+                let _ = e;
+                hm.remove_entry(&key);
+            } else {
+                smallest.insert((*e, key));
+            }
+        };
+
+        update(nums[i - k], -1);
+        update(nums[i], 1);
+
+        while largest.len() < x
+            && let Some((value, key)) = smallest.pop_last()
+        {
+            largest.insert((value, key));
+            curr += key as i64 * value as i64;
+        }
+
+        while !smallest.is_empty() && smallest.last().unwrap() > largest.first().unwrap() {
+            let (value, key) = smallest.pop_last().unwrap();
+            curr += key as i64 * value as i64;
+            largest.insert((value, key));
+            let (value, key) = largest.pop_first().unwrap();
+            curr -= key as i64 * value as i64;
+            smallest.insert((value, key));
+        }
+    }
+
+    ans.push(curr);
+    ans
+}
+
+pub fn remove_duplicates(nums: &mut [i32]) -> i32 {
+    let mut count = 1;
+    let mut j = 1;
+
+    for i in 1..nums.len() {
+        if nums[i] == nums[i - 1] {
+            count += 1;
+            if count > 2 {
+                continue;
+            }
+        } else {
+            count = 1;
+        }
+        nums[j] = nums[i];
+        j += 1;
+    }
+
+    j as i32
+}
+
+pub fn add_binary(a: String, b: String) -> String {
+    let s1: Vec<char> = a.chars().collect();
+    let s2: Vec<char> = b.chars().collect();
+    let mut ans = vec![];
+    let m = s1.len();
+    let n = s2.len();
+    let mut carry = false;
+
+    for i in 0..(n.min(m)) {
+        if s1[m - 1 - i] == s2[n - 1 - i] {
+            ans.push(if carry { '1' } else { '0' });
+            carry = s1[m - 1 - i] == '1';
+        } else {
+            ans.push(if carry { '0' } else { '1' });
+        }
+    }
+
+    let mut check_single = |c: char| {
+        if c == '0' {
+            ans.push(if carry { '1' } else { '0' });
+            carry = false;
+        } else {
+            ans.push(if carry { '0' } else { '1' });
+        }
+    };
+
+    for i in (n.min(m))..m {
+        check_single(s1[m - 1 - i]);
+    }
+
+    for i in (n.min(m))..n {
+        check_single(s2[n - 1 - i]);
+    }
+
+    if carry {
+        ans.push('1');
+    }
+
+    ans.into_iter().rev().collect()
+}
+
+// pub fn process_queries(c: i32, connections: Vec<Vec<i32>>, queries: Vec<Vec<i32>>) -> Vec<i32> {
+//     let mut adj_list = vec![(vec![], true);c as usize];
+//     for connection in connections {
+//         let (c1, c2) = (connection[0], connection[1]);
+//         adj_list[c1 as usize].0.push(c2);
+//         adj_list[c2 as usize].0.push(c1);
+//     }
+
+// }
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    info!("{:?}", find_x_sum(vec![1, 1, 2, 2, 3, 4, 2, 3], 6, 2));
+    let mut values = vec![1, 2, 2];
+    info!("{:?}", remove_duplicates(&mut values));
+    info!("{:?}", values);
 }
