@@ -1331,7 +1331,7 @@ pub fn input_binary_search() {
     loop {
         let mut low_point = String::new();
         if std::io::stdin().read_line(&mut low_point).is_ok()
-            && let Ok(val) = low_point.trim().parse::<f64>()
+            && let Ok(val) = low_point.trim().parse::<f32>()
         {
             l = val;
             break;
@@ -1343,34 +1343,33 @@ pub fn input_binary_search() {
     loop {
         let mut high_point = String::new();
         if std::io::stdin().read_line(&mut high_point).is_ok()
-            && let Ok(val) = high_point.trim().parse::<f64>()
+            && let Ok(val) = high_point.trim().parse::<f32>()
         {
             r = val;
             break;
         }
     }
 
-    while l < r && r - l > 1e-6 {
+    while l < r && r - l > 1e-4 {
         let mid = l.midpoint(r);
-        info!("\nlow value {}\nmid value {}\nhigh value {}", l, mid, r);
-        info!("enter 1 for lower or 2 for higher");
+        info!(
+            "\nlow  {}\nmid  {}\nhigh {}\nenter 1 for lower or 2 for higher",
+            l, mid, r
+        );
 
-        let dir;
         loop {
             let mut direction = String::new();
             if std::io::stdin().read_line(&mut direction).is_ok()
                 && let Ok(val) = direction.trim().parse::<u8>()
-                && (val == 1 || val == 2)
             {
-                dir = val == 2;
-                break;
+                if val == 2 {
+                    l = mid;
+                    break;
+                } else if val == 1 {
+                    r = mid;
+                    break;
+                }
             }
-        }
-
-        if dir {
-            l = mid;
-        } else {
-            r = mid;
         }
     }
 
@@ -1887,7 +1886,7 @@ pub fn accounts_merge(accounts: Vec<Vec<String>>) -> Vec<Vec<String>> {
             return false;
         }
 
-        if rank[p1] > rank[p2] {
+        if rank[p1] < rank[p2] {
             rank[p2] += rank[p1];
             uf[p1] = p2;
         } else {
@@ -2071,21 +2070,134 @@ pub fn add_binary(a: String, b: String) -> String {
     ans.into_iter().rev().collect()
 }
 
-// pub fn process_queries(c: i32, connections: Vec<Vec<i32>>, queries: Vec<Vec<i32>>) -> Vec<i32> {
-//     let mut adj_list = vec![(vec![], true);c as usize];
-//     for connection in connections {
-//         let (c1, c2) = (connection[0], connection[1]);
-//         adj_list[c1 as usize].0.push(c2);
-//         adj_list[c2 as usize].0.push(c1);
-//     }
+pub fn process_queries(c: i32, connections: Vec<Vec<i32>>, queries: Vec<Vec<i32>>) -> Vec<i32> {
+    use std::cmp::Reverse;
+    use std::collections::{BinaryHeap, HashMap, HashSet};
 
-// }
+    let c = c as usize;
+    let mut adj_list = vec![vec![]; c];
+    for con in connections {
+        let (c1, c2) = (con[0] as usize - 1, con[1] as usize - 1);
+        adj_list[c1].push(c2);
+        adj_list[c2].push(c1);
+    }
+
+    let mut group_to_heap = HashMap::new();
+    let mut station_to_group = vec![0; c];
+
+    let mut st: Vec<_> = (0..c).enumerate().collect();
+    let mut visited = vec![false; c];
+    while let Some((station, group)) = st.pop() {
+        if visited[station] {
+            continue;
+        }
+        visited[station] = true;
+
+        group_to_heap
+            .entry(group)
+            .or_insert_with(BinaryHeap::new)
+            .push(Reverse(station));
+
+        station_to_group[station] = group;
+
+        for adj_station in &adj_list[station] {
+            st.push((*adj_station, group));
+        }
+    }
+
+    let mut ans = vec![];
+    let mut deleted = HashSet::new();
+    for query in queries {
+        let (op, station) = (query[0], (query[1] - 1) as usize);
+        if op == 1 {
+            let stations = group_to_heap.get_mut(&station_to_group[station]).unwrap();
+
+            if !deleted.contains(&station) {
+                ans.push(station as i32 + 1);
+                continue;
+            }
+
+            let mut m_station = None::<usize>;
+            while let Some(Reverse(t)) = stations.peek() {
+                if !deleted.contains(t) {
+                    m_station = Some(*t);
+                    break;
+                }
+                stations.pop();
+            }
+
+            if let Some(m_station) = m_station {
+                ans.push(m_station as i32 + 1);
+            } else {
+                ans.push(-1);
+            }
+        } else if op == 2 {
+            deleted.insert(station);
+        }
+    }
+
+    ans
+}
+
+pub fn can_finish(num_courses: i32, prerequisites: Vec<Vec<i32>>) -> bool {
+    let num_courses = num_courses as usize;
+    let mut adj_list = vec![vec![]; num_courses];
+    let mut in_degree = vec![0; num_courses];
+    for preq in prerequisites {
+        let (p1, p2) = (preq[0] as usize, preq[1] as usize);
+        adj_list[p2].push(p1);
+        in_degree[p1] += 1;
+    }
+
+    let mut st: Vec<_> = in_degree
+        .iter()
+        .enumerate()
+        .filter_map(|(i, x)| (*x == 0).then_some(i))
+        .collect();
+
+    let mut visited = vec![false; num_courses];
+    while let Some(course) = st.pop() {
+        if visited[course] {
+            continue;
+        }
+        visited[course] = true;
+
+        for req_course in &adj_list[course] {
+            in_degree[*req_course] -= 1;
+            if in_degree[*req_course] == 0 {
+                st.push(*req_course);
+            }
+        }
+    }
+
+    visited.iter().all(|x| *x)
+}
+
+pub fn collect_the_coins(coins: Vec<i32>, edges: Vec<Vec<i32>>) -> i32 {
+    let n = coins.len();
+    let mut adj_list = vec![vec![]; n];
+    let mut in_degree = vec![0; n];
+    for edge in edges {
+        let (p1, p2) = (edge[0] as usize, edge[1] as usize);
+        adj_list[p2].push(p1);
+        in_degree[p1] += 1;
+    }
+
+    5
+}
 
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    let mut values = vec![1, 2, 2];
-    info!("{:?}", remove_duplicates(&mut values));
-    info!("{:?}", values);
+    // info!(
+    //     "{:?}",
+    //     process_queries(
+    //         5,
+    //         vecvec![[1, 2], [2, 3], [3, 4], [4, 5]],
+    //         vecvec![[1, 3], [2, 1], [1, 1], [2, 2], [1, 2]]
+    //     )
+    // );
+
+    input_binary_search();
 }
