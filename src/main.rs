@@ -3,6 +3,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use itertools::Itertools;
+use rand::Rng;
 use tracing::info;
 
 #[allow(unused)]
@@ -2173,31 +2174,225 @@ pub fn can_finish(num_courses: i32, prerequisites: Vec<Vec<i32>>) -> bool {
     visited.iter().all(|x| *x)
 }
 
-pub fn collect_the_coins(coins: Vec<i32>, edges: Vec<Vec<i32>>) -> i32 {
-    let n = coins.len();
-    let mut adj_list = vec![vec![]; n];
-    let mut in_degree = vec![0; n];
-    for edge in edges {
-        let (p1, p2) = (edge[0] as usize, edge[1] as usize);
-        adj_list[p2].push(p1);
-        in_degree[p1] += 1;
+pub fn max_power(stations: Vec<i32>, r: i32, k: i32) -> i64 {
+    let r = r as usize;
+    let n = stations.len();
+    let mut diff = vec![0; n + 1];
+    for (i, st) in stations.iter().enumerate() {
+        diff[i.saturating_sub(r)] += *st as i64;
+        diff[n.min(i + r + 1)] -= *st as i64;
     }
 
-    5
+    let mut left = *stations.iter().min().unwrap() as i64;
+    let mut right = stations.iter().map(|x| *x as i64).sum::<i64>() + k as i64;
+
+    let check = |val: i64| -> bool {
+        let mut c_diff = diff.clone();
+        let mut curr = 0;
+        let mut r_stations = k as i64;
+        for i in 0..n {
+            curr += c_diff[i];
+            if curr < val {
+                let n_stations = val - curr;
+                if r_stations < n_stations {
+                    return false;
+                }
+                r_stations -= n_stations;
+
+                c_diff[n.min(i + 2 * r + 1)] -= n_stations;
+                curr += n_stations;
+            }
+        }
+        true
+    };
+
+    let mut ans = 0;
+    while left <= right {
+        let mid = left.midpoint(right);
+
+        if check(mid) {
+            ans = mid;
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+
+    ans
+}
+
+pub fn min_eating_speed(mut piles: Vec<i32>, h: i32) -> i32 {
+    // not seeing any online solutions trying to sort the input array
+    // so that the check fn hits false sooner if it was going to hit false anyway
+    piles.sort_unstable_by(|a, b| b.cmp(a));
+    let mut l = 1;
+    let mut r = *piles.iter().max().unwrap();
+    let mut ans = l;
+
+    let check = |val: i32| -> bool {
+        let mut remain = h;
+        for pile in &piles {
+            remain -= (*pile as f64 / val as f64).ceil() as i32;
+            if remain < 0 {
+                return false;
+            }
+        }
+        true
+    };
+
+    while l <= r {
+        let mid = l.midpoint(r);
+        if check(mid) {
+            r = mid - 1;
+        } else {
+            ans = mid + 1;
+            l = mid + 1;
+        }
+    }
+
+    ans
+}
+
+pub fn min_eating_speed_wo_sort(piles: Vec<i32>, h: i32) -> i32 {
+    let mut l = 1;
+    let mut r = *piles.iter().max().unwrap();
+    let mut ans = l;
+
+    let check = |val: i32| -> bool {
+        let mut remain = h;
+        for pile in &piles {
+            remain -= (*pile as f64 / val as f64).ceil() as i32;
+            if remain < 0 {
+                return false;
+            }
+        }
+        true
+    };
+
+    while l <= r {
+        let mid = l.midpoint(r);
+        if check(mid) {
+            r = mid - 1;
+        } else {
+            ans = mid + 1;
+            l = mid + 1;
+        }
+    }
+
+    ans
+}
+
+// spoilers no sorting tends to be better
+pub fn test_diff_in_sorting() {
+    let mut r = rand::rng();
+    let mut sorting_count = 0;
+    let mut no_sorting_count = 0;
+    let mut total_sorting = 0f64;
+    let mut total_no_sorting = 0f64;
+
+    let total_tests = 1000;
+    let t = std::time::Instant::now();
+    for _ in 0..total_tests {
+        let input_vec: Vec<_> = (0..100_000)
+            .map(|_| r.random_range(0..1_000_000_000))
+            .collect();
+        let input_vec2: Vec<_> = input_vec.clone();
+        let hours = r.random_range(input_vec.len() as i32..i32::MAX);
+
+        let t1 = std::time::Instant::now();
+        min_eating_speed(input_vec, hours);
+        let e1 = t1.elapsed().as_micros();
+        let _ = t1;
+
+        let t2 = std::time::Instant::now();
+        min_eating_speed_wo_sort(input_vec2, hours);
+        let e2 = t2.elapsed().as_micros();
+        let _ = t2;
+
+        match e1.cmp(&e2) {
+            std::cmp::Ordering::Less => sorting_count += 1,
+            std::cmp::Ordering::Greater => no_sorting_count += 1,
+            std::cmp::Ordering::Equal => {}
+        }
+
+        total_sorting += e1 as u32 as f64;
+        total_no_sorting += e2 as u32 as f64;
+        info!("{} {}", e1, e2);
+    }
+
+    info!("test time {}ms", t.elapsed().as_millis());
+    info!(
+        "sorting {:#} avg time {:#} micros",
+        sorting_count,
+        total_sorting / total_tests as f64
+    );
+    info!(
+        "no sorting {:#} avg time {:#} micros",
+        no_sorting_count,
+        total_no_sorting / total_tests as f64
+    );
+}
+
+pub fn num_rabbits(answers: Vec<i32>) -> i32 {
+    let mut hm = std::collections::HashMap::new();
+    for answer in answers {
+        *hm.entry(answer).or_insert(0) += 1;
+    }
+
+    let mut ans = 0;
+    for (key, value) in hm {
+        let groups = (value / (key + 1)) * (key + 1);
+        ans += groups;
+        if groups != value {
+            ans += key + 1;
+        }
+    }
+    ans
+}
+
+struct TwoSum {
+    hm: std::collections::HashMap<i32, i32>,
+}
+
+impl TwoSum {
+    fn new() -> Self {
+        Self {
+            hm: std::collections::HashMap::new(),
+        }
+    }
+
+    fn add(&mut self, number: i32) {
+        *self.hm.entry(number).or_default() += 1;
+    }
+
+    fn find(&self, value: i32) -> bool {
+        for (key, val) in &self.hm {
+            if value - *key == *key {
+                if *val > 1 {
+                    return true;
+                }
+                continue;
+            }
+            if self.hm.contains_key(&(value - *key)) {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+pub fn test_two_sum_ds() {
+    let mut ts = TwoSum::new();
+    ts.add(1);
+    ts.add(3);
+    ts.add(5);
+    assert!(ts.find(4));
+    assert!(!ts.find(7));
 }
 
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    // info!(
-    //     "{:?}",
-    //     process_queries(
-    //         5,
-    //         vecvec![[1, 2], [2, 3], [3, 4], [4, 5]],
-    //         vecvec![[1, 3], [2, 1], [1, 1], [2, 2], [1, 2]]
-    //     )
-    // );
-
-    input_binary_search();
+    test_two_sum_ds();
 }
