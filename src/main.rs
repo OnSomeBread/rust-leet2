@@ -315,7 +315,7 @@ pub const fn min_operations_slow(mut n: i32) -> i32 {
     ans
 }
 
-pub const fn min_operations(n: i32) -> i32 {
+pub const fn min_operations_fast(n: i32) -> i32 {
     (n ^ (n * 3)).count_ones() as i32
 }
 
@@ -2648,15 +2648,29 @@ pub fn min_interval(mut intervals: Vec<Vec<i32>>, mut queries: Vec<i32>) -> Vec<
     ans
 }
 
+pub fn min_operations(nums: Vec<i32>) -> i32 {
+    let mut st = vec![];
+    let mut ans = 0;
+    for num in nums {
+        while let Some(top) = st.last()
+            && num < *top
+        {
+            st.pop();
+        }
+        if num == 0 {
+            continue;
+        }
+        if st.last().map_or(0, |x| *x) != num {
+            ans += 1;
+        }
+        st.push(num);
+    }
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    info!(
-        "{:?}",
-        min_interval(
-            vecvec![[4, 5], [5, 8], [1, 9], [8, 10], [1, 6]],
-            vec![7, 9, 3, 9, 3]
-        )
-    );
+    info!("{:?}", min_operations(vec![1, 2, 1, 2, 1, 2]));
 }
