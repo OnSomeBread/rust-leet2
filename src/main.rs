@@ -2390,9 +2390,273 @@ pub fn test_two_sum_ds() {
     assert!(!ts.find(7));
 }
 
+pub fn minimum_one_bit_operations(n: i32) -> i32 {
+    if n == 0 {
+        return 0;
+    }
+    let mut k = 1u32;
+    while 2i32.pow(k) <= n {
+        k += 1;
+    }
+    k -= 1;
+
+    2i32.pow(k + 1) - minimum_one_bit_operations(2i32.pow(k) ^ n)
+}
+
+pub fn min_moves(nums: Vec<i32>) -> i32 {
+    let largest = *nums.iter().max().unwrap();
+    let mut ans = 0;
+    for num in nums {
+        ans += largest - num;
+    }
+    ans
+}
+
+pub fn total_fruit(fruits: Vec<i32>) -> i32 {
+    let mut hm = std::collections::HashMap::new();
+    let mut l = 0;
+    let mut ans = 0;
+    for (r, f) in fruits.iter().enumerate() {
+        *hm.entry(f).or_insert(0) += 1;
+        while hm.len() > 2 {
+            let e = hm.entry(&fruits[l]).or_default();
+            *e -= 1;
+            if *e == 0 {
+                hm.remove(&fruits[l]);
+            }
+            l += 1;
+        }
+        ans = ans.max(r - l + 1);
+    }
+    ans as i32
+}
+
+pub fn longest_nice_subarray(nums: Vec<i32>) -> i32 {
+    let mut l = 0;
+    let mut curr = 0;
+    let mut ans = 0;
+    for (r, num) in nums.iter().enumerate() {
+        while l < r && *num & curr != 0 {
+            curr ^= nums[l];
+            l += 1;
+        }
+        curr |= *num;
+        ans = ans.max(r - l + 1);
+    }
+    ans as i32
+}
+
+pub const fn count_operations(mut num1: i32, mut num2: i32) -> i32 {
+    let mut count = 0;
+    while num1 > 0 && num2 > 0 {
+        if num1 < num2 {
+            num2 -= num1;
+        } else {
+            num1 -= num2;
+        }
+        count += 1;
+    }
+    count
+}
+
+#[derive(Default)]
+struct TrieNode {
+    pub hm: std::collections::HashMap<char, Self>,
+    pub is_word_ending: bool,
+}
+
+#[derive(Default)]
+struct Trie {
+    root: TrieNode,
+}
+
+impl Trie {
+    fn new() -> Self {
+        Self::default()
+    }
+
+    fn insert(&mut self, word: String) {
+        let mut traverse = &mut self.root.hm;
+        for (i, letter) in word.chars().enumerate() {
+            let e = traverse.entry(letter.to_ascii_lowercase()).or_default();
+            if i == word.len() - 1 {
+                e.is_word_ending = true;
+            }
+            traverse = &mut e.hm;
+        }
+    }
+
+    fn search(&self, word: String) -> bool {
+        let mut traverse = &self.root.hm;
+        for (i, letter) in word.chars().enumerate() {
+            if let Some(e) = traverse.get(&letter.to_ascii_lowercase()) {
+                if i == word.len() - 1 && !e.is_word_ending {
+                    return false;
+                }
+                traverse = &e.hm;
+            } else {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn starts_with(&self, prefix: String) -> bool {
+        let mut traverse = &self.root.hm;
+        for letter in prefix.chars() {
+            if let Some(e) = traverse.get(&letter.to_ascii_lowercase()) {
+                traverse = &e.hm;
+            } else {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+pub fn trie_test() {
+    let mut obj = Trie::new();
+    obj.insert("apple".into());
+    assert!(obj.search("apple".into()));
+    assert!(obj.starts_with("app".into()));
+}
+
+#[derive(Default)]
+struct TrieNode2 {
+    pub hm: std::collections::HashMap<char, Self>,
+    pub words_end_here: i32,
+    pub words_prefix_here: i32,
+}
+
+#[derive(Default)]
+struct Trie2 {
+    root: TrieNode2,
+}
+
+impl Trie2 {
+    fn new() -> Self {
+        Self::default()
+    }
+
+    fn insert(&mut self, word: String) {
+        let mut traverse = &mut self.root.hm;
+        for (i, letter) in word.chars().enumerate() {
+            let e = traverse.entry(letter.to_ascii_lowercase()).or_default();
+            if i == word.len() - 1 {
+                e.words_end_here += 1;
+            }
+            e.words_prefix_here += 1;
+            traverse = &mut e.hm;
+        }
+    }
+
+    fn count_words_equal_to(&self, word: String) -> i32 {
+        let mut traverse = &self.root.hm;
+        for (i, letter) in word.chars().enumerate() {
+            if let Some(e) = traverse.get(&letter.to_ascii_lowercase()) {
+                if i == word.len() - 1 {
+                    return e.words_end_here;
+                }
+                traverse = &e.hm;
+            } else {
+                return 0;
+            }
+        }
+        0
+    }
+
+    fn count_words_starting_with(&self, word: String) -> i32 {
+        let mut traverse = &self.root.hm;
+        for (i, letter) in word.chars().enumerate() {
+            if let Some(e) = traverse.get(&letter.to_ascii_lowercase()) {
+                if i == word.len() - 1 {
+                    return e.words_prefix_here;
+                }
+                traverse = &e.hm;
+            } else {
+                return 0;
+            }
+        }
+        0
+    }
+
+    fn erase(&mut self, prefix: String) {
+        let mut traverse = &mut self.root.hm;
+        for (i, letter) in prefix.chars().enumerate() {
+            let e = traverse.entry(letter.to_ascii_lowercase()).or_default();
+            if i == prefix.len() - 1 {
+                e.words_end_here -= 1;
+            }
+            e.words_prefix_here -= 1;
+            traverse = &mut e.hm;
+        }
+    }
+}
+
+pub fn trie2_test() {
+    let mut obj = Trie2::new();
+    obj.insert("apple".into());
+    assert!(obj.count_words_equal_to("apple".into()) == 1);
+    assert!(obj.count_words_starting_with("app".into()) == 1);
+    obj.erase("apple".into());
+    assert!(obj.count_words_equal_to("apple".into()) == 0);
+    assert!(obj.count_words_starting_with("app".into()) == 0);
+}
+
+pub fn min_interval(mut intervals: Vec<Vec<i32>>, mut queries: Vec<i32>) -> Vec<i32> {
+    use std::cmp::Reverse;
+    use std::collections::{BinaryHeap, HashMap};
+    intervals.sort_unstable();
+    let mut q_to_idx = HashMap::new();
+    for (i, q) in queries.iter().enumerate() {
+        q_to_idx.entry(*q).or_insert_with(Vec::new).push(i);
+    }
+    let mut ans = vec![0; queries.len()];
+
+    queries.sort_unstable();
+    queries.dedup();
+    let mut curr_intervals = BinaryHeap::new();
+
+    let mut l = 0;
+    for q in queries {
+        while l < intervals.len() && q >= intervals[l][0] {
+            curr_intervals.push(Reverse((
+                intervals[l][1] - intervals[l][0] + 1,
+                intervals[l][1],
+            )));
+
+            l += 1;
+        }
+
+        while let Some(Reverse((_, r))) = curr_intervals.peek()
+            && q > *r
+        {
+            curr_intervals.pop();
+        }
+
+        if let Some(Reverse((dist, _))) = curr_intervals.peek() {
+            for i in &q_to_idx[&q] {
+                ans[*i] = *dist;
+            }
+        } else {
+            for i in &q_to_idx[&q] {
+                ans[*i] = -1;
+            }
+        }
+    }
+
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    test_two_sum_ds();
+    info!(
+        "{:?}",
+        min_interval(
+            vecvec![[4, 5], [5, 8], [1, 9], [8, 10], [1, 6]],
+            vec![7, 9, 3, 9, 3]
+        )
+    );
 }
