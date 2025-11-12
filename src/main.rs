@@ -1,5 +1,6 @@
 #![allow(clippy::needless_pass_by_value)]
 
+use core::f64;
 use std::{cell::RefCell, rc::Rc};
 
 use itertools::Itertools;
@@ -17,6 +18,17 @@ macro_rules! vecvec {
     ( $( [ $elem:expr; $n:expr ] ),* $(,)? ) => {
         vec![ $( vec![$elem; $n] ),* ]
     };
+}
+
+#[allow(unused)]
+macro_rules! vecstrs {
+    ($($x:expr),* $(,)?) => (
+        vec![$($x.to_string()),*]
+    );
+
+    ($elem:expr; $n:expr) => (
+        vec![$elem.to_string(); $n]
+    );
 }
 
 pub fn successful_pairs(mut spells: Vec<i32>, mut potions: Vec<i32>, success: i64) -> Vec<i32> {
@@ -2648,7 +2660,7 @@ pub fn min_interval(mut intervals: Vec<Vec<i32>>, mut queries: Vec<i32>) -> Vec<
     ans
 }
 
-pub fn min_operations(nums: Vec<i32>) -> i32 {
+pub fn min_operations2(nums: Vec<i32>) -> i32 {
     let mut st = vec![];
     let mut ans = 0;
     for num in nums {
@@ -2668,9 +2680,426 @@ pub fn min_operations(nums: Vec<i32>) -> i32 {
     ans
 }
 
+pub fn find_max_form_top_down(strs: Vec<String>, m: i32, n: i32) -> i32 {
+    let mut counts = vec![];
+    for s in strs {
+        let (mut zeros, mut ones) = (0, 0);
+        for letter in s.chars() {
+            if letter == '0' {
+                zeros += 1;
+            } else if letter == '1' {
+                ones += 1;
+            }
+        }
+        counts.push((zeros, ones));
+    }
+    use std::collections::HashMap;
+
+    fn dp(
+        counts: &[(i32, i32)],
+        cache: &mut HashMap<(usize, (i32, i32)), i32>,
+        i: usize,
+        total: (i32, i32),
+        m: i32,
+        n: i32,
+    ) -> i32 {
+        if total.0 > m || total.1 > n {
+            return i32::MIN;
+        }
+        if i >= counts.len() {
+            return 0;
+        }
+
+        if let Some(ans) = cache.get(&(i, total)) {
+            return *ans;
+        }
+
+        let next_total = (total.0 + counts[i].0, total.1 + counts[i].1);
+        let count_curr = dp(counts, cache, i + 1, next_total, m, n) + 1;
+        let skip_curr = dp(counts, cache, i + 1, total, m, n);
+
+        let ans = count_curr.max(skip_curr);
+        cache.insert((i, total), ans);
+        ans
+    }
+
+    let mut cache = HashMap::new();
+
+    dp(&counts, &mut cache, 0, (0, 0), m, n)
+}
+
+pub fn find_max_form(strs: Vec<String>, m: i32, n: i32) -> i32 {
+    let (m, n) = (m as usize, n as usize);
+    let mut dp = vec![vec![0; n + 1]; m + 1];
+    for s in &strs {
+        let zeros = s.matches('0').count();
+        let ones = s.len() - zeros;
+
+        for t1 in (zeros..=m).rev() {
+            for t2 in (ones..=n).rev() {
+                dp[t1][t2] = dp[t1][t2].max(dp[t1 - zeros][t2 - ones] + 1);
+            }
+        }
+    }
+
+    dp[m][n]
+}
+
+pub fn unique_paths_with_obstacles(obstacle_grid: Vec<Vec<i32>>) -> i32 {
+    let m = obstacle_grid.len();
+    let n = obstacle_grid[0].len();
+    let mut dp = vec![vec![0; n]; m];
+    dp[0][0] = i32::from(obstacle_grid[0][0] != 1);
+    for i in 1..m {
+        dp[i][0] = i32::from(obstacle_grid[i][0] != 1 && dp[i - 1][0] == 1);
+    }
+    for j in 1..n {
+        dp[0][j] = i32::from(obstacle_grid[0][j] != 1 && dp[0][j - 1] == 1);
+    }
+    for i in 1..m {
+        for j in 1..n {
+            if obstacle_grid[i][j] == 1 {
+                dp[i][j] = 0;
+            } else {
+                dp[i][j] = dp[i - 1][j] + dp[i][j - 1];
+            }
+        }
+    }
+
+    dp[m - 1][n - 1]
+}
+
+pub fn maximal_square(matrix: Vec<Vec<char>>) -> i32 {
+    let m = matrix.len();
+    let n = matrix[0].len();
+    let mut dp = vec![vec![0; n + 1]; m + 1];
+    let mut ans = 0;
+
+    for i in (0..m).rev() {
+        for j in (0..n).rev() {
+            if matrix[i][j] == '1' {
+                dp[i][j] = dp[i + 1][j].min(dp[i + 1][j + 1]).min(dp[i][j + 1]) + 1;
+                ans = ans.max(dp[i][j]);
+            }
+        }
+    }
+
+    ans * ans
+}
+
+pub fn min_operations(nums: Vec<i32>) -> i32 {
+    let ones = nums.iter().filter(|x| **x == 1).count();
+    if ones > 0 {
+        return nums.len() as i32 - ones as i32;
+    }
+    let gcd = |mut a: i32, mut b: i32| -> i32 {
+        if b > a {
+            std::mem::swap(&mut a, &mut b);
+        }
+
+        while b != 0 {
+            let r = a % b;
+            a = b;
+            b = r;
+        }
+        a
+    };
+
+    let mut ans = i32::MAX;
+    for i in 0..nums.len() {
+        let mut g = 0;
+        for (j, nj) in nums.iter().enumerate().skip(i) {
+            if j - i + 1 >= ans as usize {
+                break;
+            }
+            g = gcd(g, *nj);
+            if g == 1 {
+                ans = j as i32 - i as i32 + 1;
+                break;
+            }
+        }
+    }
+
+    if ans == i32::MAX {
+        return -1;
+    }
+
+    ans - 1 + nums.len() as i32 - 1
+}
+
+#[derive(Default)]
+struct MyNode {
+    pub val: i32,
+    pub next: Option<*mut Self>,
+    pub prev: Option<*mut Self>,
+}
+
+impl MyNode {
+    const fn new(val: i32) -> Self {
+        Self {
+            val,
+            next: None,
+            prev: None,
+        }
+    }
+}
+
+struct MyLinkedList {
+    front: Option<*mut MyNode>,
+    tail: Option<*mut MyNode>,
+    size: i32,
+}
+
+impl MyLinkedList {
+    const fn new() -> Self {
+        Self {
+            front: None,
+            tail: None,
+            size: 0,
+        }
+    }
+
+    fn get(&self, index: i32) -> i32 {
+        if index >= self.size || index < 0 {
+            return -1;
+        }
+        if index < self.size / 2 {
+            let mut i = 0;
+            let mut ptr = self.front;
+            while let Some(curr) = ptr {
+                if i == index {
+                    return unsafe { (*curr).val };
+                }
+                ptr = unsafe { (*curr).next };
+                i += 1;
+            }
+        } else {
+            let mut i = self.size - 1;
+            let mut ptr = self.tail;
+            while let Some(curr) = ptr {
+                if i == index {
+                    return unsafe { (*curr).val };
+                }
+                ptr = unsafe { (*curr).prev };
+                i -= 1;
+            }
+        }
+        -1
+    }
+
+    fn add_at_head(&mut self, val: i32) {
+        let new_front = Box::into_raw(Box::new(MyNode::new(val)));
+        if let Some(front) = self.front {
+            unsafe {
+                (*front).prev = Some(new_front);
+                (*new_front).next = Some(front);
+            };
+            self.front = Some(new_front);
+        } else {
+            self.front = Some(new_front);
+            self.tail = Some(new_front);
+        }
+
+        self.size += 1;
+    }
+
+    fn add_at_tail(&mut self, val: i32) {
+        let new_tail = Box::into_raw(Box::new(MyNode::new(val)));
+        if let Some(tail) = self.tail {
+            unsafe {
+                (*tail).next = Some(new_tail);
+                (*new_tail).prev = Some(tail);
+            };
+            self.tail = Some(new_tail);
+        } else {
+            self.tail = Some(new_tail);
+            self.front = Some(new_tail);
+        }
+        self.size += 1;
+    }
+
+    fn add_at_index(&mut self, index: i32, val: i32) {
+        if index > self.size {
+            return;
+        } else if index == 0 {
+            self.add_at_head(val);
+            return;
+        } else if index == self.size {
+            self.add_at_tail(val);
+            return;
+        }
+        if index < self.size / 2 {
+            let mut i = 0;
+            let mut ptr = self.front;
+            while let Some(curr) = ptr {
+                if i == index {
+                    let new_node = Box::into_raw(Box::new(MyNode::new(val)));
+                    unsafe {
+                        if let Some(prev) = (*curr).prev {
+                            (*prev).next = Some(new_node);
+                            (*new_node).prev = Some(prev);
+                        }
+                        (*new_node).next = Some(curr);
+                        (*curr).prev = Some(new_node);
+                    }
+
+                    self.size += 1;
+                    return;
+                }
+                ptr = unsafe { (*curr).next };
+                i += 1;
+            }
+        } else {
+            let mut i = self.size - 1;
+            let mut ptr = self.tail;
+            while let Some(curr) = ptr {
+                if i == index {
+                    let new_node = Box::into_raw(Box::new(MyNode::new(val)));
+                    unsafe {
+                        if let Some(prev) = (*curr).prev {
+                            (*prev).next = Some(new_node);
+                            (*new_node).prev = Some(prev);
+                        }
+                        (*new_node).next = Some(curr);
+                        (*curr).prev = Some(new_node);
+                    }
+
+                    self.size += 1;
+                    return;
+                }
+                ptr = unsafe { (*curr).prev };
+                i -= 1;
+            }
+        }
+    }
+
+    fn pop_first(&mut self) -> i32 {
+        let front = self.front.unwrap();
+        unsafe {
+            if let Some(next) = (*front).next {
+                (*next).prev = None;
+                self.front = Some(next);
+            } else {
+                self.front = None;
+                self.tail = None;
+            }
+        }
+        self.size -= 1;
+
+        let val = unsafe { (*front).val };
+        unsafe { drop(Box::from_raw(front)) }
+        val
+    }
+
+    fn pop_last(&mut self) -> i32 {
+        let tail = self.tail.unwrap();
+        unsafe {
+            if let Some(prev) = (*tail).prev {
+                (*prev).next = None;
+                self.tail = Some(prev);
+            } else {
+                self.front = None;
+                self.tail = None;
+            }
+        }
+        self.size -= 1;
+        let val = unsafe { (*tail).val };
+        unsafe { drop(Box::from_raw(tail)) }
+        val
+    }
+
+    fn delete_at_index(&mut self, index: i32) {
+        if index >= self.size {
+            return;
+        } else if index == 0 {
+            self.pop_first();
+            return;
+        } else if index == self.size - 1 {
+            self.pop_last();
+            return;
+        }
+
+        if index < self.size / 2 {
+            let mut i = 0;
+            let mut ptr = self.front;
+            while let Some(curr) = ptr {
+                if i == index {
+                    unsafe {
+                        if let Some(prev) = (*curr).prev {
+                            (*prev).next = (*curr).next;
+                        }
+                        if let Some(next) = (*curr).next {
+                            (*next).prev = (*curr).prev;
+                        }
+                    }
+                    unsafe { drop(Box::from_raw(curr)) };
+                    self.size -= 1;
+                    return;
+                }
+                ptr = unsafe { (*curr).next };
+                i += 1;
+            }
+        } else {
+            let mut i = self.size - 1;
+            let mut ptr = self.tail;
+            while let Some(curr) = ptr {
+                if i == index {
+                    unsafe {
+                        if let Some(prev) = (*curr).prev {
+                            (*prev).next = (*curr).next;
+                        }
+                        if let Some(next) = (*curr).next {
+                            (*next).prev = (*curr).prev;
+                        }
+                    }
+                    unsafe { drop(Box::from_raw(curr)) };
+                    self.size -= 1;
+                    return;
+                }
+                ptr = unsafe { (*curr).prev };
+                i -= 1;
+            }
+        }
+    }
+}
+
+pub fn test_linked_list() {
+    let mut obj = MyLinkedList::new();
+    assert!(obj.get(0) == -1);
+
+    obj.add_at_head(1);
+    assert!(obj.get(0) == 1);
+
+    obj.pop_first();
+    assert!(obj.get(0) == -1);
+
+    obj.add_at_head(1);
+    assert!(obj.get(0) == 1);
+
+    obj.add_at_tail(3);
+    assert!(obj.get(1) == 3);
+
+    obj.pop_last();
+    assert!(obj.get(1) == -1);
+
+    obj.add_at_tail(3);
+    assert!(obj.get(1) == 3);
+
+    obj.add_at_index(1, 2);
+
+    assert!(obj.get(1) == 2);
+
+    obj.delete_at_index(1);
+    assert!(obj.get(1) == 3);
+}
+
+fn num_kings(target: f64, chips: i32, base_mult: i32, retriggers: i32) -> i32 {
+    ((target / chips as f64 / base_mult as f64).log(1.5) / (retriggers + 1) as f64).ceil() as i32
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    info!("{:?}", min_operations(vec![1, 2, 1, 2, 1, 2]));
+    info!("{}", num_kings(f64::MAX, 435, 250 * 2, 3));
 }
