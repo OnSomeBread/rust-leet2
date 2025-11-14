@@ -5,6 +5,8 @@ use std::{cell::RefCell, rc::Rc};
 
 use itertools::Itertools;
 use rand::Rng;
+use rayon::iter::IntoParallelIterator;
+use rayon::prelude::*;
 use tracing::info;
 
 #[allow(unused)]
@@ -1595,7 +1597,7 @@ pub fn compress(chars: &mut [char]) -> i32 {
     j as i32
 }
 
-pub fn max_operations(mut nums: Vec<i32>, k: i32) -> i32 {
+pub fn max_operations1(mut nums: Vec<i32>, k: i32) -> i32 {
     nums.sort_unstable();
     let mut l = 0;
     let mut r = nums.len() - 1;
@@ -3093,13 +3095,262 @@ pub fn test_linked_list() {
     assert!(obj.get(1) == 3);
 }
 
-fn num_kings(target: f64, chips: i32, base_mult: i32, retriggers: i32) -> i32 {
+pub fn num_kings(target: f64, chips: i32, base_mult: i32, retriggers: i32) -> i32 {
     ((target / chips as f64 / base_mult as f64).log(1.5) / (retriggers + 1) as f64).ceil() as i32
+}
+
+pub fn set_zeroes(matrix: &mut [Vec<i32>]) {
+    use std::collections::HashSet;
+    let mut rows = HashSet::new();
+    let mut cols = HashSet::new();
+
+    for (i, row) in matrix.iter().enumerate() {
+        for (j, val) in row.iter().enumerate() {
+            if *val == 0 {
+                rows.insert(i);
+                cols.insert(j);
+            }
+        }
+    }
+
+    for row in rows {
+        for val in &mut matrix[row] {
+            *val = 0;
+        }
+    }
+
+    for col in cols {
+        for row in matrix.iter_mut() {
+            row[col] = 0;
+        }
+    }
+}
+
+pub fn game_of_life(board: &mut [Vec<i32>]) {
+    let mut changes = std::collections::HashMap::new();
+    let m = board.len();
+    let n = board[0].len();
+    let check_live_neighbors = |i: usize, j: usize| -> i32 {
+        let dirs = [
+            (1, 0),
+            (-1, 0),
+            (1, 1),
+            (-1, -1),
+            (-1, 1),
+            (1, -1),
+            (0, 1),
+            (0, -1),
+        ];
+        let mut count = 0;
+        for (di, dj) in dirs {
+            let (ni, nj) = (i as i32 + di, j as i32 + dj);
+            if ni >= 0
+                && ni < m as i32
+                && nj >= 0
+                && nj < n as i32
+                && board[ni as usize][nj as usize] == 1
+            {
+                count += 1;
+            }
+        }
+        count
+    };
+
+    for (i, row) in board.iter().enumerate() {
+        for (j, val) in row.iter().enumerate() {
+            let live = check_live_neighbors(i, j);
+            if *val == 1 && !(2..=3).contains(&live) {
+                changes.insert((i, j), 0);
+            } else if *val == 0 && live == 3 {
+                changes.insert((i, j), 1);
+            }
+        }
+    }
+
+    for ((i, j), value) in changes {
+        board[i][j] = value;
+    }
+}
+
+// pub fn spiral_order(matrix: Vec<Vec<i32>>) -> Vec<i32> {
+//     let mut ans = vec![];
+//     let m = matrix.len();
+//     let n = matrix[0].len();
+
+//     ans
+// }
+
+pub fn can_make_arithmetic_progression(mut arr: Vec<i32>) -> bool {
+    arr.sort_unstable();
+    let all_diff = (arr[0] - arr[1]).abs();
+    for i in 1..arr.len() - 1 {
+        let diff = (arr[i] - arr[i + 1]).abs();
+        if diff != all_diff {
+            return false;
+        }
+    }
+    true
+}
+
+pub fn pivot_integer(n: i32) -> i32 {
+    let val = ((n * n + n) as f64 / 2f64).sqrt();
+    if val - ((val as i32) as f64) > 1e-6 {
+        return -1;
+    }
+    val as i32
+}
+
+pub fn is_palindrome_using_str(x: i32) -> bool {
+    if x < 0 {
+        return false;
+    }
+    x.to_string().chars().collect::<Vec<char>>()
+        == x.to_string().chars().rev().collect::<Vec<char>>()
+}
+
+pub const fn is_palindrome(mut x: i32) -> bool {
+    if x < 0 || (x % 10 == 0 && x != 0) {
+        return false;
+    }
+    let mut ans = 0;
+    while x > ans {
+        ans = ans * 10 + x % 10;
+        x /= 10;
+    }
+    ans == x || ans / 10 == x
+}
+
+pub fn max_operations_w_heap_alloc(s: &str) -> i64 {
+    let letters = s.chars().collect::<Vec<char>>();
+    let mut ans = 0;
+    let mut count_ones = 0;
+    for i in 0..letters.len() - 1 {
+        if letters[i] == '1' {
+            count_ones += 1;
+        }
+        if letters[i] == '1' && letters[i + 1] == '0' {
+            ans += count_ones;
+        }
+    }
+    ans
+}
+
+pub fn max_operations(s: &str) -> i64 {
+    let mut ans = 0;
+    let mut count_ones = 0;
+    for (curr, next) in s.chars().zip(s.chars().skip(1)) {
+        if curr == '1' {
+            count_ones += 1;
+        }
+        if curr == '1' && next == '0' {
+            ans += count_ones;
+        }
+    }
+    ans
+}
+
+pub fn is_ugly(mut n: i32) -> bool {
+    if n <= 0 {
+        return false;
+    }
+
+    for div in [2, 3, 5] {
+        while n % div == 0 {
+            n /= div;
+        }
+    }
+
+    n == 1
+}
+
+pub fn smallest_repunit_div_by_k(k: i32) -> i32 {
+    if k % 2 == 0 {
+        return -1;
+    }
+
+    let mut r = 0;
+    for i in 1..=k {
+        r = (r * 10 + 1) % k;
+        if r == 0 {
+            return i;
+        }
+    }
+    -1
+}
+
+pub fn self_dividing_numbers(left: i32, right: i32) -> Vec<i32> {
+    let mut ans = vec![];
+    for n in left..=right {
+        let mut m = n;
+        while m > 0 {
+            let t = m % 10;
+            if t == 0 || n % t != 0 {
+                break;
+            }
+            m /= 10;
+        }
+        if m == 0 {
+            ans.push(n);
+        }
+    }
+    ans
+}
+
+pub const fn reverse(x: i32) -> i32 {
+    if x == i32::MIN {
+        return 0;
+    }
+    let mut n = x.abs();
+    let mut ans = 0;
+    while n > 0 {
+        if ans > i32::MAX / 10 {
+            return 0;
+        }
+        ans = ans * 10 + (n % 10);
+        n /= 10;
+    }
+    if x > 0 { ans } else { -ans }
+}
+
+pub fn range_add_queries(n: i32, queries: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    let n = n as usize;
+    let mut diffs = vec![vec![0; n + 1]; n + 1];
+    for q in queries {
+        let (r1, c1, r2, c2) = (q[0] as usize, q[1] as usize, q[2] as usize, q[3] as usize);
+        diffs[r1][c1] += 1;
+        diffs[r1][c2 + 1] -= 1;
+        diffs[r2 + 1][c1] -= 1;
+        diffs[r2 + 1][c2 + 1] += 1;
+    }
+
+    let mut ans = vec![vec![0; n]; n];
+    for i in 0..n {
+        for j in 0..n {
+            let v1 = if i == 0 { 0 } else { diffs[i - 1][j] };
+            let v2 = if j == 0 { 0 } else { diffs[i][j - 1] };
+            let v3 = if j == 0 || i == 0 {
+                0
+            } else {
+                diffs[i - 1][j - 1]
+            };
+            ans[i][j] = diffs[i][j] + v1 + v2 - v3;
+        }
+    }
+    ans
 }
 
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    info!("{}", num_kings(f64::MAX, 435, 250 * 2, 3));
+    let t = std::time::Instant::now();
+    let s: String = (0..5_000_000_000i64)
+        .into_par_iter()
+        .map(|_| {
+            let mut rng = rand::rng();
+            if rng.random_bool(0.5) { '1' } else { '0' }
+        })
+        .collect();
+    info!("creation time {}ms", t.elapsed().as_millis());
+    info!("{:?}", s);
 }
