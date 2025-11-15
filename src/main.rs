@@ -5,7 +5,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use itertools::Itertools;
 use rand::Rng;
-use rayon::iter::IntoParallelIterator;
+#[allow(unused_imports)]
 use rayon::prelude::*;
 use tracing::info;
 
@@ -3339,18 +3339,63 @@ pub fn range_add_queries(n: i32, queries: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
     ans
 }
 
+struct Bank {
+    pub accounts: Vec<i64>,
+}
+
+impl Bank {
+    const fn new(balance: Vec<i64>) -> Self {
+        Self { accounts: balance }
+    }
+
+    const fn valid_acc(&self, account: i32) -> bool {
+        account > 0 && account <= self.accounts.len() as i32
+    }
+
+    fn transfer(&mut self, account1: i32, account2: i32, money: i64) -> bool {
+        if !self.valid_acc(account1) || !self.valid_acc(account2) {
+            return false;
+        }
+
+        if self.accounts[account1 as usize - 1] < money {
+            return false;
+        }
+
+        self.accounts[account1 as usize - 1] -= money;
+        self.accounts[account2 as usize - 1] += money;
+
+        true
+    }
+
+    fn deposit(&mut self, account: i32, money: i64) -> bool {
+        if !self.valid_acc(account) {
+            return false;
+        }
+        self.accounts[account as usize - 1] += money;
+        true
+    }
+
+    fn withdraw(&mut self, account: i32, money: i64) -> bool {
+        if !self.valid_acc(account) || self.accounts[account as usize - 1] < money {
+            return false;
+        }
+        self.accounts[account as usize - 1] -= money;
+        true
+    }
+}
+
+pub fn test_bank_system() {
+    let mut obj = Bank::new(vec![10, 100, 20, 50, 30]);
+    assert!(obj.withdraw(3, 10));
+    assert!(obj.transfer(5, 1, 20));
+    assert!(obj.deposit(5, 20));
+    assert!(!obj.transfer(3, 4, 15));
+    assert!(obj.withdraw(10, 50));
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    let t = std::time::Instant::now();
-    let s: String = (0..5_000_000_000i64)
-        .into_par_iter()
-        .map(|_| {
-            let mut rng = rand::rng();
-            if rng.random_bool(0.5) { '1' } else { '0' }
-        })
-        .collect();
-    info!("creation time {}ms", t.elapsed().as_millis());
-    info!("{:?}", s);
+    test_bank_system();
 }
