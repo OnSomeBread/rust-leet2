@@ -1,4 +1,5 @@
 #![allow(clippy::needless_pass_by_value)]
+#![allow(clippy::needless_range_loop)]
 
 use core::f64;
 use std::{cell::RefCell, rc::Rc};
@@ -3391,6 +3392,39 @@ pub fn test_bank_system() {
     assert!(obj.deposit(5, 20));
     assert!(!obj.transfer(3, 4, 15));
     assert!(obj.withdraw(10, 50));
+}
+
+pub fn number_of_substrings(s: String) -> i32 {
+    let s: Vec<char> = s.chars().collect();
+    let n = s.len();
+    let mut next_zero = vec![n; n];
+    for i in (0..n - 1).rev() {
+        if s[i + 1] == '0' {
+            next_zero[i] = i + 1;
+        } else {
+            next_zero[i] = next_zero[i + 1];
+        }
+    }
+
+    let mut ans = 0;
+    for l in 0..n {
+        let mut zeros = i32::from(s[l] == '0');
+        let mut r = l;
+
+        while zeros * zeros <= n as i32 {
+            let nz = next_zero[r] as i32;
+            let ones = (nz - l as i32) - zeros;
+            if ones >= zeros * zeros {
+                ans += (nz - r as i32).min(ones - zeros * zeros + 1);
+            }
+            r = nz as usize;
+            zeros += 1;
+            if r == n {
+                break;
+            }
+        }
+    }
+    ans
 }
 
 fn main() {
