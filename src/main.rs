@@ -1,7 +1,6 @@
 #![allow(clippy::needless_pass_by_value)]
 #![allow(clippy::needless_range_loop)]
 
-use core::f64;
 use std::{cell::RefCell, rc::Rc};
 
 use itertools::Itertools;
@@ -3391,7 +3390,7 @@ pub fn test_bank_system() {
     assert!(obj.transfer(5, 1, 20));
     assert!(obj.deposit(5, 20));
     assert!(!obj.transfer(3, 4, 15));
-    assert!(obj.withdraw(10, 50));
+    assert!(!obj.withdraw(10, 50));
 }
 
 pub fn number_of_substrings(s: String) -> i32 {
@@ -3427,9 +3426,83 @@ pub fn number_of_substrings(s: String) -> i32 {
     ans
 }
 
+pub fn num_sub(s: String) -> i32 {
+    let mut ans = 0;
+    let mut curr = 0;
+    for letter in s.chars() {
+        if letter == '1' {
+            curr += 1;
+        } else {
+            curr = 0;
+        }
+        ans = (ans + curr) % (1e9 as i32 + 7);
+    }
+    ans
+}
+
+pub fn three_sum_smaller_binary_search(mut nums: Vec<i32>, target: i32) -> i32 {
+    let t = target - *nums.iter().min().unwrap_or(&0) * 2;
+    nums.retain(|x| *x < t);
+    nums.sort_unstable();
+
+    let mut ans = 0;
+    for (i, numi) in nums.iter().enumerate().take(nums.len() - 2) {
+        for (j, numj) in nums.iter().enumerate().skip(i + 1).take(nums.len() - 1) {
+            ans += nums[j + 1..].partition_point(|x| *x < target - numi - numj);
+        }
+    }
+    ans as i32
+}
+
+pub fn three_sum_smaller(mut nums: Vec<i32>, target: i32) -> i32 {
+    let t = target - *nums.iter().min().unwrap_or(&0) * 2;
+    nums.retain(|x| *x < t);
+    nums.sort_unstable();
+
+    let mut ans = 0;
+    for (i, numi) in nums.iter().enumerate().take(nums.len() - 2) {
+        let mut l = i + 1;
+        let mut r = nums.len() - 1;
+        while l < r {
+            if nums[l] < target - numi - nums[r] {
+                ans += r - l;
+                l += 1;
+            } else {
+                r -= 1;
+            }
+        }
+    }
+    ans as i32
+}
+
+pub fn generate(num_rows: i32) -> Vec<Vec<i32>> {
+    let mut ans = vec![vec![1]];
+    for r in 2..=num_rows as usize {
+        let mut row = vec![];
+        for j in 0..r {
+            row.push(ans[r - 2].get(j).unwrap_or(&0) + ans[r - 2].get(j - 1).unwrap_or(&0));
+        }
+        ans.push(row);
+    }
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    test_bank_system();
+    let v1: Vec<i32> = (0..50_000)
+        .into_par_iter()
+        .map(|_| {
+            let mut rng = rand::rng();
+            rng.random_range(-100..100)
+        })
+        .collect();
+
+    let mut rng = rand::rng();
+    let target = rng.random_range(-100..100);
+    info!("target = {}", target);
+    let t = std::time::Instant::now();
+    info!("{}", std::hint::black_box(three_sum_smaller(v1, target)));
+    info!("{}ms", t.elapsed().as_millis());
 }
