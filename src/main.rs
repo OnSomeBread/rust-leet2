@@ -3487,22 +3487,88 @@ pub fn generate(num_rows: i32) -> Vec<Vec<i32>> {
     ans
 }
 
+pub fn spellchecker(wordlist: Vec<String>, mut queries: Vec<String>) -> Vec<String> {
+    use std::collections::{HashMap, HashSet};
+    let set_wordlist: HashSet<&str> = wordlist.iter().map(std::string::String::as_str).collect();
+
+    let mut lowercased_wordlist = HashMap::new();
+    for (i, word) in wordlist.iter().enumerate() {
+        lowercased_wordlist
+            .entry(word.to_ascii_lowercase())
+            .or_insert(i);
+    }
+
+    let replaced_vowels: [char; 26] = [
+        '_', 'b', 'c', 'd', '_', 'f', 'g', 'h', '_', 'j', 'k', 'l', 'm', 'n', '_', 'p', 'q', 'r',
+        's', 't', '_', 'v', 'w', 'x', 'y', 'z',
+    ];
+
+    let vchar_to_char = |x: char| unsafe {
+        replaced_vowels.get_unchecked((x.to_ascii_lowercase() as u8 - b'a') as usize)
+    };
+
+    let mut vowels_removed_wordlist = HashMap::new();
+    for (i, word) in wordlist.iter().enumerate() {
+        let word: String = word.chars().map(vchar_to_char).collect();
+
+        vowels_removed_wordlist.entry(word).or_insert(i);
+    }
+
+    for query in &mut queries {
+        if set_wordlist.contains(query.as_str()) {
+            continue;
+        }
+
+        if let Some(i) = lowercased_wordlist.get(&query.to_ascii_lowercase()) {
+            query.clone_from(&wordlist[*i]);
+        } else if let Some(i) =
+            vowels_removed_wordlist.get(&query.chars().map(vchar_to_char).collect::<String>())
+        {
+            query.clone_from(&wordlist[*i]);
+        } else {
+            *query = String::new();
+        }
+    }
+
+    queries
+}
+
+pub fn k_length_apart(nums: Vec<i32>, k: i32) -> bool {
+    let mut dist = 100_000;
+    for num in nums {
+        if num == 1 && dist <= k {
+            return false;
+        } else if num == 1 {
+            dist = 1;
+        } else {
+            dist += 1;
+        }
+    }
+    true
+}
+
+pub fn minimum_abs_difference(mut arr: Vec<i32>) -> Vec<Vec<i32>> {
+    arr.sort_unstable();
+    let mut ans = vec![];
+    let mut best = i32::MAX;
+    for (a, b) in arr.into_iter().tuple_windows() {
+        let v = b - a;
+        match v.cmp(&best) {
+            std::cmp::Ordering::Greater => {}
+            std::cmp::Ordering::Less => {
+                best = v;
+                ans.clear();
+                ans.push(vec![a, b]);
+            }
+            std::cmp::Ordering::Equal => ans.push(vec![a, b]),
+        }
+    }
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(non_blocking).init();
 
-    let v1: Vec<i32> = (0..50_000)
-        .into_par_iter()
-        .map(|_| {
-            let mut rng = rand::rng();
-            rng.random_range(-100..100)
-        })
-        .collect();
-
-    let mut rng = rand::rng();
-    let target = rng.random_range(-100..100);
-    info!("target = {}", target);
-    let t = std::time::Instant::now();
-    info!("{}", std::hint::black_box(three_sum_smaller(v1, target)));
-    info!("{}ms", t.elapsed().as_millis());
+    info!("{:?}", k_length_apart(vec![1, 0, 0, 0, 1, 0, 0, 1], 2));
 }

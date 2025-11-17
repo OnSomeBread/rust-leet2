@@ -3,8 +3,10 @@ name = "leet2"
 version = "0.1.0"
 edition = "2024"
 
-[profile.release]
+[profile.dev]
 debug = false
+
+[profile.release]
 panic = "abort"
 lto = true
 codegen-units = 1
