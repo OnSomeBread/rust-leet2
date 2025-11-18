@@ -3566,9 +3566,91 @@ pub fn minimum_abs_difference(mut arr: Vec<i32>) -> Vec<Vec<i32>> {
     ans
 }
 
+pub fn length_of_longest_substring(s: String) -> i32 {
+    let mut ans = 0;
+    let mut l = 0;
+    let letters: Vec<char> = s.chars().collect();
+    let mut sub_window = std::collections::HashSet::new();
+    for r in 0..letters.len() {
+        while sub_window.contains(&letters[r]) {
+            sub_window.remove(&letters[l]);
+            l += 1;
+        }
+        sub_window.insert(letters[r]);
+
+        ans = ans.max(r - l + 1);
+    }
+    ans as i32
+}
+
+pub fn product_except_self(nums: Vec<i32>) -> Vec<i32> {
+    let mut ans = vec![0; nums.len()];
+    ans[0] = 1;
+    for i in 1..nums.len() {
+        ans[i] = ans[i - 1] * nums[i - 1];
+    }
+
+    let mut right_side = 1;
+    for i in (0..nums.len()).rev() {
+        ans[i] *= right_side;
+        right_side *= nums[i];
+    }
+    ans
+}
+
+pub fn missing_number(nums: Vec<i32>) -> i32 {
+    let n = nums.len() as i32;
+    n * (n + 1) / 2 - nums.iter().sum::<i32>()
+}
+
+pub fn find_judge(n: i32, trust: Vec<Vec<i32>>) -> i32 {
+    let mut people_trust = vec![0; n as usize + 1];
+    for t in trust {
+        let (p1, p2) = (t[0] as usize, t[1] as usize);
+        people_trust[p2] += 1;
+        people_trust[p1] -= 1;
+    }
+
+    for (i, person) in people_trust.into_iter().enumerate().skip(1) {
+        if person == n - 1 {
+            return i as i32;
+        }
+    }
+    -1
+}
+
+pub fn sorted_squares(nums: Vec<i32>) -> Vec<i32> {
+    let mut ans = vec![0; nums.len()];
+    let mut l = 0;
+    let mut r = nums.len() - 1;
+    for i in (0..nums.len()).rev() {
+        if nums[l].abs() < nums[r].abs() {
+            ans[i] = nums[r] * nums[r];
+            r -= 1;
+        } else {
+            ans[i] = nums[l] * nums[l];
+            l += 1;
+        }
+    }
+    ans
+}
+
+pub fn is_one_bit_character(mut bits: Vec<i32>) -> bool {
+    let mut p = bits.pop().unwrap();
+    while let Some(t) = bits.pop()
+        && t == 1
+    {
+        p ^= 1;
+    }
+    p == 0
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
-    tracing_subscriber::fmt().with_writer(non_blocking).init();
+    tracing_subscriber::fmt()
+        .with_writer(non_blocking)
+        .without_time()
+        .init();
 
-    info!("{:?}", k_length_apart(vec![1, 0, 0, 0, 1, 0, 0, 1], 2));
+    info!("{:?}", product_except_self(vec![1, 2, 3, 4]));
 }
