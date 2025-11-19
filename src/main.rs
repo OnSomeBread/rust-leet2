@@ -3645,6 +3645,83 @@ pub fn is_one_bit_character(mut bits: Vec<i32>) -> bool {
     p == 0
 }
 
+pub fn search(nums: Vec<i32>, target: i32) -> i32 {
+    let pivot = nums.partition_point(|x| *x > nums[nums.len() - 1]);
+
+    if target > nums[nums.len() - 1]
+        && let Ok(ans) = nums[..pivot].binary_search(&target)
+    {
+        ans as i32
+    } else {
+        nums[pivot..]
+            .binary_search(&target)
+            .map_or(-1, |ans| (pivot + ans) as i32)
+    }
+}
+
+pub fn trap(height: Vec<i32>) -> i32 {
+    let mut max_from_right = vec![0; height.len() + 1];
+    let mut prev = 0;
+    for (i, &h) in height.iter().enumerate().rev() {
+        max_from_right[i] = prev.max(h);
+        prev = prev.max(h);
+    }
+
+    let mut max_from_left = 0;
+    let mut ans = 0;
+    for (i, &h) in height.iter().enumerate() {
+        ans += 0.max(max_from_left.min(max_from_right[i]) - h);
+        max_from_left = max_from_left.max(h);
+    }
+    ans
+}
+
+pub fn is_happy(mut n: i32) -> bool {
+    let mut hs = std::collections::HashSet::new();
+    while n > 1 {
+        if hs.contains(&n) {
+            return false;
+        }
+        hs.insert(n);
+        let mut curr = 0;
+        while n > 0 {
+            let d = n % 10;
+            curr += d * d;
+            n /= 10;
+        }
+        n = curr;
+    }
+    n == 1
+}
+
+pub fn erase_overlap_intervals(intervals: Vec<Vec<i32>>) -> i32 {
+    use std::cmp::Reverse;
+    let mut h: std::collections::BinaryHeap<Reverse<(i32, i32)>> = intervals
+        .into_iter()
+        .map(|x| Reverse((x[0], x[1])))
+        .collect();
+
+    let mut ans = 0;
+    while let Some(Reverse(mut curr)) = h.pop() {
+        while let Some(Reverse((start, end))) = h.peek() {
+            if curr.1 >= *start {
+                curr.1 = *end;
+                h.pop();
+                ans += 1;
+            }
+        }
+    }
+    ans
+}
+
+pub fn find_final_value(nums: Vec<i32>, mut original: i32) -> i32 {
+    let hs: std::collections::HashSet<i32> = nums.into_iter().collect();
+    while hs.contains(&original) {
+        original *= 2;
+    }
+    original
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -3652,5 +3729,5 @@ fn main() {
         .without_time()
         .init();
 
-    info!("{:?}", product_except_self(vec![1, 2, 3, 4]));
+    info!("{:?}", trap(vec![0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]));
 }
