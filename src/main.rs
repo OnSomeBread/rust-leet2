@@ -3694,21 +3694,18 @@ pub fn is_happy(mut n: i32) -> bool {
     n == 1
 }
 
-pub fn erase_overlap_intervals(intervals: Vec<Vec<i32>>) -> i32 {
-    use std::cmp::Reverse;
-    let mut h: std::collections::BinaryHeap<Reverse<(i32, i32)>> = intervals
-        .into_iter()
-        .map(|x| Reverse((x[0], x[1])))
-        .collect();
+pub fn erase_overlap_intervals(mut intervals: Vec<Vec<i32>>) -> i32 {
+    intervals.sort_unstable();
 
     let mut ans = 0;
-    while let Some(Reverse(mut curr)) = h.pop() {
-        while let Some(Reverse((start, end))) = h.peek() {
-            if curr.1 >= *start {
-                curr.1 = *end;
-                h.pop();
-                ans += 1;
-            }
+    let mut k = i32::MIN;
+    for interval in intervals {
+        let (start, end) = (interval[0], interval[1]);
+        if start >= k {
+            k = end;
+        } else {
+            ans += 1;
+            k = k.min(end);
         }
     }
     ans
@@ -3722,6 +3719,93 @@ pub fn find_final_value(nums: Vec<i32>, mut original: i32) -> i32 {
     original
 }
 
+pub fn find_min_arrow_shots(mut points: Vec<Vec<i32>>) -> i32 {
+    points.sort_unstable();
+
+    let mut ans = 1;
+    let mut start = points[0][0];
+    let mut end = points[0][1];
+    for p in points.iter().skip(1) {
+        let (p0, p1) = (p[0], p[1]);
+        if (start..=end).contains(&p0) || (start..=end).contains(&p1) {
+            start = start.max(p0);
+            end = end.min(p1);
+        } else {
+            ans += 1;
+            start = p0;
+            end = p1;
+        }
+    }
+    ans
+}
+
+pub fn merge(mut intervals: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    intervals.sort_unstable();
+    let mut ans = vec![];
+    let mut curr_start = intervals[0][0];
+    let mut curr_end = intervals[0][1];
+    for interval in intervals {
+        let (start, end) = (interval[0], interval[1]);
+        if (curr_start..=curr_end).contains(&start) || (curr_start..=curr_end).contains(&end) {
+            curr_end = curr_end.max(end);
+        } else {
+            ans.push(vec![curr_start, curr_end]);
+            curr_start = start;
+            curr_end = end;
+        }
+    }
+    ans.push(vec![curr_start, curr_end]);
+    ans
+}
+
+pub fn intersection_size_two_with_vec(mut intervals: Vec<Vec<i32>>) -> i32 {
+    intervals.sort_unstable_by(|a, b| a[1].cmp(&b[1]));
+    let mut ans = vec![intervals[0][1] - 1, intervals[0][1]];
+
+    for interval in intervals.iter().skip(1) {
+        let (start, end) = (interval[0], interval[1]);
+        let (v1, v2) = (ans[ans.len() - 2], ans[ans.len() - 1]);
+
+        if (start..=end).contains(&v1) {
+            continue;
+        }
+
+        if !(start..=end).contains(&v2) {
+            ans.push(end - 1);
+        }
+        let n = ans.len() - 1;
+        if ans[n] == end {
+            ans[n] = end - 1;
+        }
+        ans.push(end);
+    }
+    ans.len() as i32
+}
+
+pub fn intersection_size_two(mut intervals: Vec<Vec<i32>>) -> i32 {
+    intervals.sort_unstable_by(|a, b| a[1].cmp(&b[1]));
+    let (mut v1, mut v2) = (intervals[0][1] - 1, intervals[0][1]);
+    let mut ans = 2;
+
+    for interval in intervals.iter().skip(1) {
+        let (start, end) = (interval[0], interval[1]);
+
+        if (start..=end).contains(&v1) {
+            continue;
+        }
+        if (start..=end).contains(&v2) {
+            v1 = if v2 == end { v2 - 1 } else { v2 };
+            v2 = end;
+            ans += 1;
+        } else {
+            v1 = end - 1;
+            v2 = end;
+            ans += 2;
+        }
+    }
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -3729,5 +3813,23 @@ fn main() {
         .without_time()
         .init();
 
-    info!("{:?}", trap(vec![0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]));
+    info!(
+        "{:?}",
+        intersection_size_two(vecvec![
+            [2, 10],
+            [3, 7],
+            [3, 15],
+            [4, 11],
+            [6, 12],
+            [6, 16],
+            [7, 8],
+            [7, 11],
+            [7, 15],
+            [11, 12]
+        ])
+    );
+    info!(
+        "{:?}",
+        intersection_size_two(vecvec![[1, 3], [3, 7], [5, 7], [7, 8]])
+    );
 }
