@@ -3806,6 +3806,40 @@ pub fn intersection_size_two(mut intervals: Vec<Vec<i32>>) -> i32 {
     ans
 }
 
+pub fn count_palindromic_subsequence(s: String) -> i32 {
+    use std::collections::{HashMap, HashSet};
+    let letters: Vec<char> = s.chars().collect();
+    let hs: HashSet<&char> = letters.iter().collect();
+
+    let mut left = HashMap::new();
+    let mut right = HashMap::new();
+    for (i, letter) in letters.iter().enumerate() {
+        left.entry(letter).or_insert(i);
+        *right.entry(letter).or_insert(i) = i;
+    }
+
+    let mut ans = 0;
+    for letter in hs {
+        let mut found = HashSet::new();
+        for i in left[letter] + 1..right[letter] {
+            found.insert(unsafe { letters.get_unchecked(i) });
+        }
+        ans += found.len() as i32;
+    }
+
+    ans
+}
+
+pub fn minimum_operations(nums: Vec<i32>) -> i32 {
+    let mut ans = 0;
+    for num in nums {
+        if num % 3 != 0 {
+            ans += 1;
+        }
+    }
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -3813,23 +3847,5 @@ fn main() {
         .without_time()
         .init();
 
-    info!(
-        "{:?}",
-        intersection_size_two(vecvec![
-            [2, 10],
-            [3, 7],
-            [3, 15],
-            [4, 11],
-            [6, 12],
-            [6, 16],
-            [7, 8],
-            [7, 11],
-            [7, 15],
-            [11, 12]
-        ])
-    );
-    info!(
-        "{:?}",
-        intersection_size_two(vecvec![[1, 3], [3, 7], [5, 7], [7, 8]])
-    );
+    info!("{:?}", count_palindromic_subsequence("aabca".into()));
 }

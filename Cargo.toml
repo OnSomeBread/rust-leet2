@@ -1,3 +1,4 @@
+cargo-features = ["trim-paths"]
 [package]
 name = "leet2"
 version = "0.1.0"
@@ -11,6 +12,7 @@ panic = "abort"
 lto = true
 codegen-units = 1
 strip = true
+trim-paths = "all"
 
 
 [dependencies]
