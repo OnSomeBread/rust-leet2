@@ -3840,6 +3840,52 @@ pub fn minimum_operations(nums: Vec<i32>) -> i32 {
     ans
 }
 
+pub fn depth_sum_inverse(nested_list: Vec<NestedInteger>) -> i32 {
+    let mut ans = 0;
+    let mut depths = vec![];
+    let mut st = vec![(&nested_list, 1)];
+    let mut max_depth = 0;
+    while let Some((val, d)) = st.pop() {
+        max_depth = max_depth.max(d);
+        for item in val {
+            if let NestedInteger::List(ls) = item {
+                st.push((ls, d + 1));
+            } else if let NestedInteger::Int(v) = item {
+                depths.push((*v, d));
+            }
+        }
+    }
+
+    for (val, depth) in depths {
+        ans += val * (max_depth - depth + 1);
+    }
+
+    ans
+}
+
+pub fn max_sum_div_three(nums: Vec<i32>) -> i32 {
+    let mut total = 0;
+    let mut r1 = 10_000;
+    let mut r2 = 10_000;
+    for num in nums {
+        total += num;
+        if num % 3 == 1 {
+            r2 = r2.min(num + r1);
+            r1 = r1.min(num);
+        } else if num % 3 == 2 {
+            r1 = r1.min(num + r2);
+            r2 = r2.min(num);
+        }
+    }
+
+    if total % 3 == 1 {
+        return total - r1;
+    } else if total % 3 == 2 {
+        return total - r2;
+    }
+    total
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -3847,5 +3893,5 @@ fn main() {
         .without_time()
         .init();
 
-    info!("{:?}", count_palindromic_subsequence("aabca".into()));
+    info!("{:?}", max_sum_div_three(vec![1, 2, 3, 4, 4]));
 }
