@@ -3886,6 +3886,18 @@ pub fn max_sum_div_three(nums: Vec<i32>) -> i32 {
     total
 }
 
+pub fn prefixes_div_by5(nums: Vec<i32>) -> Vec<bool> {
+    let mut ans = vec![false; nums.len()];
+    let mut curr = 0;
+    for (i, &num) in nums.iter().enumerate() {
+        curr = (curr << 1) % 5 + num;
+        if curr % 5 == 0 {
+            ans[i] = true;
+        }
+    }
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -3893,5 +3905,11 @@ fn main() {
         .without_time()
         .init();
 
-    info!("{:?}", max_sum_div_three(vec![1, 2, 3, 4, 4]));
+    info!(
+        "{:?}",
+        prefixes_div_by5(vec![
+            1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+            0, 0, 1, 1, 0, 1, 0, 0, 0, 1
+        ])
+    );
 }
