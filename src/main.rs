@@ -3898,6 +3898,47 @@ pub fn prefixes_div_by5(nums: Vec<i32>) -> Vec<bool> {
     ans
 }
 
+pub fn subsets(nums: Vec<i32>) -> Vec<Vec<i32>> {
+    let mut ans = vec![vec![]];
+    let mut st: Vec<(Vec<i32>, usize)> = nums
+        .iter()
+        .enumerate()
+        .map(|(i, x)| (vec![*x], i))
+        .collect();
+
+    while let Some((top, i)) = st.pop() {
+        ans.push(top.clone());
+
+        for (j, &elm) in nums.iter().enumerate().skip(i + 1) {
+            let mut new_top = top.clone();
+            new_top.push(elm);
+            st.push((new_top, j));
+        }
+    }
+
+    ans
+}
+
+fn fib(n: i32) -> i32 {
+    if n <= 1 {
+        return n;
+    }
+    fib(n - 1) + fib(n - 2)
+}
+
+const fn fib_faster(mut n: i32) -> i32 {
+    let mut p1 = 0;
+    let mut p2 = 1;
+    while n > 1 {
+        let t = p2;
+        p2 += p1;
+        p1 = t;
+
+        n -= 1;
+    }
+    p2
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -3905,11 +3946,12 @@ fn main() {
         .without_time()
         .init();
 
-    info!(
-        "{:?}",
-        prefixes_div_by5(vec![
-            1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0,
-            0, 0, 1, 1, 0, 1, 0, 0, 0, 1
-        ])
-    );
+    let n = 45;
+
+    let t = std::time::Instant::now();
+    info!("{:?}", fib(n));
+    info!("{:?}", t.elapsed());
+    let t = std::time::Instant::now();
+    info!("{:?}", fib_faster(n));
+    info!("{:?}", t.elapsed());
 }

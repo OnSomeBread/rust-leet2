@@ -1,11 +1,12 @@
-cargo-features = ["trim-paths"]
+cargo-features = ["trim-paths", "codegen-backend"]
 [package]
 name = "leet2"
 version = "0.1.0"
 edition = "2024"
 
 [profile.dev]
-debug = false
+debug = 0
+codegen-backend = "cranelift"
 
 [profile.release]
 panic = "abort"
