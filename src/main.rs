@@ -3939,6 +3939,66 @@ const fn fib_faster(mut n: i32) -> i32 {
     p2
 }
 
+pub fn get_permutation(n: i32, k: i32) -> String {
+    let mut factorials: Vec<i32> = vec![1];
+    let mut nums = vec!["1".to_string()];
+
+    for i in 1..n {
+        factorials.push(factorials[factorials.len() - 1] * i);
+        nums.push((i + 1).to_string());
+    }
+
+    let mut k = k - 1;
+    let mut ans = vec![];
+    for i in (0..n as usize).rev() {
+        let j = k / factorials[i];
+        k -= j * factorials[i];
+
+        ans.push(nums[j as usize].clone());
+        nums.remove(j as usize);
+    }
+
+    ans.into_iter().collect()
+}
+
+pub fn number_of_paths(grid: Vec<Vec<i32>>, k: i32) -> i32 {
+    let m = grid.len();
+    let n = grid[0].len();
+    let k = k as usize;
+
+    let mut dp = vec![vec![vec![0; k]; n + 1]; m + 1];
+    for i in 1..=m {
+        for j in 1..=n {
+            if i == 1 && j == 1 {
+                dp[i][j][(grid[0][0] % k as i32) as usize] = 1;
+                continue;
+            }
+            let v = (grid[i - 1][j - 1] % k as i32) as usize;
+            for l in 0..k {
+                let p = (l as i32 - v as i32 + k as i32) as usize % k;
+                dp[i][j][l] = (dp[i - 1][j][p] + dp[i][j - 1][p]) % 1_000_000_007;
+            }
+        }
+    }
+
+    dp[m][n][0]
+}
+
+pub fn rearrange_sticks(n: i32, k: i32) -> i32 {
+    let n = n as usize;
+    let k = k as usize;
+    let mut dp = vec![vec![0i64; k + 1]; n + 1];
+
+    dp[0][0] = 1;
+    for j in 1..=k {
+        for i in j..=n {
+            dp[i][j] += dp[i - 1][j - 1];
+            dp[i][j] = (dp[i][j] + dp[i - 1][j] * (i as i64 - 1)) % 1_000_000_007;
+        }
+    }
+    dp[n][k] as i32
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
