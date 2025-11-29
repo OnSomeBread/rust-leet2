@@ -1,2 +1,13 @@
+#[unstable]
+#build-std = ["std", "panic_abort"]
+
 [build]
-rustflags = ["-Ctarget-cpu=native", "-Cdebuginfo=0", "-Zthreads=24"]
+rustflags = [
+    "-Ctarget-cpu=native",
+    "-Cdebuginfo=0",
+    "-Zthreads=24",
+    "-Cforce-frame-pointers=no",
+    "-Cprefer-dynamic=no",
+    "-Cno-vectorize-loops",
+    "-Cno-prepopulate-passes",
+]

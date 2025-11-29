@@ -87,7 +87,7 @@ pub fn largest_triangle_area(points: Vec<Vec<i32>>) -> f64 {
     ans
 }
 
-pub fn max_points(points: Vec<Vec<i32>>) -> i32 {
+pub fn max_points2(points: Vec<Vec<i32>>) -> i32 {
     let mut slopes = std::collections::HashMap::new();
     for point in points {
         let (x, y) = (point[0], point[1]);
@@ -183,6 +183,35 @@ pub fn max_k_divisible_components(n: i32, edges: Vec<Vec<i32>>, values: Vec<i32>
     ans
 }
 
+pub fn min_operations(nums: Vec<i32>, k: i32) -> i32 {
+    nums.iter().sum::<i32>() % k
+}
+
+pub fn max_points(points: Vec<Vec<i32>>) -> i32 {
+    let n = points.len();
+    if n <= 2 {
+        return n as i32;
+    }
+
+    let mut ans = 2;
+    for i in 0..n {
+        for j in i + 1..n {
+            let mut curr = 2;
+            for k in 0..n {
+                if k != i
+                    && k != j
+                    && (points[j][1] - points[i][1]) * (points[i][0] - points[k][0])
+                        == (points[i][1] - points[k][1]) * (points[j][0] - points[i][0])
+                {
+                    curr += 1;
+                }
+                ans = ans.max(curr);
+            }
+        }
+    }
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -190,5 +219,5 @@ fn main() {
         .without_time()
         .init();
 
-    t4a(max_k_divisible_components);
+    t1a(max_points);
 }
