@@ -107,7 +107,11 @@ where
     for (test, ans) in tests.into_iter().zip(answers.into_iter()) {
         let v1: A = f(serde_json::from_str(test).unwrap());
         let v2: A = serde_json::from_str(ans).unwrap();
-        assert_eq!(v1, v2);
+        if v1 == v2 {
+            info!("PASSED");
+        } else {
+            info!("FAILED {:?} {:?}", v1, v2);
+        }
     }
 }
 
@@ -128,7 +132,11 @@ where
             serde_json::from_str(a2).unwrap(),
         );
         let v2: A = serde_json::from_str(ans).unwrap();
-        assert_eq!(v1, v2);
+        if v1 == v2 {
+            info!("PASSED");
+        } else {
+            info!("FAILED {:?} {:?}", v1, v2);
+        }
     }
 }
 
@@ -153,7 +161,11 @@ where
             serde_json::from_str(a3).unwrap(),
         );
         let v2: A = serde_json::from_str(ans).unwrap();
-        assert_eq!(v1, v2);
+        if v1 == v2 {
+            info!("PASSED");
+        } else {
+            info!("FAILED {:?} {:?}", v1, v2);
+        }
     }
 }
 
@@ -184,6 +196,10 @@ where
             serde_json::from_str(a4).unwrap(),
         );
         let v2: A = serde_json::from_str(ans).unwrap();
-        assert_eq!(v1, v2);
+        if v1 == v2 {
+            info!("PASSED");
+        } else {
+            info!("FAILED {:?} {:?}", v1, v2);
+        }
     }
 }

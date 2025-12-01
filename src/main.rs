@@ -212,6 +212,104 @@ pub fn max_points(points: Vec<Vec<i32>>) -> i32 {
     ans
 }
 
+pub fn min_subarray(nums: Vec<i32>, p: i32) -> i32 {
+    let target = (nums.iter().map(|x| *x as i64).sum::<i64>() % p as i64) as i32;
+    if target == 0 {
+        return 0;
+    }
+
+    let mut hm = std::collections::HashMap::new();
+    hm.insert(0, -1);
+    let mut total = 0;
+    let mut ans = i32::MAX;
+    for (i, &num) in nums.iter().enumerate() {
+        total = (total + num) % p;
+        if num % p == target {
+            return 1;
+        }
+        if let Some(&l) = hm.get(&((total - target + p) % p)) {
+            ans = ans.min(i as i32 - l);
+        }
+
+        hm.insert(total, i as i32);
+    }
+
+    if ans == i32::MAX {
+        return -1;
+    }
+
+    if ans == nums.len() as i32 { -1 } else { ans }
+}
+
+pub fn check_overlap(
+    radius: i32,
+    x_center: i32,
+    y_center: i32,
+    x1: i32,
+    y1: i32,
+    x2: i32,
+    y2: i32,
+) -> bool {
+    let dx = x1.max(x2.min(x_center)) - x_center;
+    let dy = y1.max(y2.min(y_center)) - y_center;
+    dx * dx + dy * dy <= radius * radius
+}
+
+pub const fn hamming_weight(mut n: i32) -> i32 {
+    let mut ans = 0;
+    while n > 0 {
+        ans += n & 1;
+        n >>= 1;
+    }
+    ans
+}
+
+pub fn single_number(nums: Vec<i32>) -> i32 {
+    let mut ans = 0;
+    for num in nums {
+        ans ^= num;
+    }
+
+    ans
+}
+
+pub const fn get_sum(mut a: i32, mut b: i32) -> i32 {
+    while b != 0 {
+        let c = a & b;
+        a ^= b;
+        b = c << 1;
+    }
+    a
+}
+
+pub fn find_array(pref: Vec<i32>) -> Vec<i32> {
+    let mut ans = vec![pref[0]];
+    for i in 1..pref.len() {
+        ans.push(pref[i] ^ pref[i - 1]);
+    }
+    ans
+}
+
+pub fn max_run_time(n: i32, batteries: Vec<i32>) -> i64 {
+    let n = n as i64;
+    let mut l = 1;
+    let mut r = batteries.iter().map(|x| *x as i64).sum::<i64>() / n;
+    while l < r {
+        let t = r - (r - l) / 2;
+        let mut extra = 0;
+        for &p in &batteries {
+            extra += (p as i64).min(t);
+        }
+
+        if extra / n >= t {
+            l = t;
+        } else {
+            r = t - 1;
+        }
+    }
+    l
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -219,5 +317,5 @@ fn main() {
         .without_time()
         .init();
 
-    t1a(max_points);
+    t1a(find_array);
 }
