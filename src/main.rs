@@ -310,6 +310,47 @@ pub fn max_run_time(n: i32, batteries: Vec<i32>) -> i64 {
     l
 }
 
+pub fn jump(nums: Vec<i32>) -> i32 {
+    let n = nums.len();
+    let mut dp = vec![i32::MAX / 2; n];
+    dp[0] = 0;
+    for i in 0..n {
+        for j in 1..=nums[i] as usize {
+            if i + j < n {
+                dp[i + j] = dp[i + j].min(dp[i] + 1);
+            }
+        }
+    }
+
+    dp[n - 1]
+}
+
+pub fn rob(nums: Vec<i32>) -> i32 {
+    let n = nums.len();
+    if n == 1 {
+        return nums[0];
+    }
+    let mut dp = vec![0; n + 1];
+    dp[0] = 0;
+    dp[1] = nums[0];
+    for i in 1..n {
+        dp[i + 1] = dp[i].max(dp[i - 1] + nums[i]);
+    }
+    dp[n]
+}
+
+// pub fn max_profit(prices: Vec<i32>) -> i32 {
+//     let n = prices.len();
+//     let mut dp = vec![vec![i32::MIN; 2]; n + 1];
+
+//     for i in 1..n {
+//         dp[i + 1][0] = dp[i - 1][1] + prices[i];
+//         dp[i + 1][1] = dp[i][0] - prices[i];
+//     }
+
+//     dp[n][0]
+// }
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -317,5 +358,5 @@ fn main() {
         .without_time()
         .init();
 
-    t1a(find_array);
+    //t1a(max_profit);
 }
