@@ -339,17 +339,165 @@ pub fn rob(nums: Vec<i32>) -> i32 {
     dp[n]
 }
 
-// pub fn max_profit(prices: Vec<i32>) -> i32 {
-//     let n = prices.len();
-//     let mut dp = vec![vec![i32::MIN; 2]; n + 1];
+pub fn max_profit_top_down(prices: Vec<i32>) -> i32 {
+    use std::collections::HashMap;
 
-//     for i in 1..n {
-//         dp[i + 1][0] = dp[i - 1][1] + prices[i];
-//         dp[i + 1][1] = dp[i][0] - prices[i];
-//     }
+    fn dp(nums: &Vec<i32>, i: usize, has: bool, cache: &mut HashMap<(usize, bool), i32>) -> i32 {
+        if i >= nums.len() {
+            return 0;
+        }
+        if let Some(&ans) = cache.get(&(i, has)) {
+            return ans;
+        }
 
-//     dp[n][0]
-// }
+        let mut best = dp(nums, i + 1, has, cache);
+        if has {
+            best = best.max(dp(nums, i + 2, !has, cache) + nums[i]);
+        } else {
+            best = best.max(dp(nums, i + 1, !has, cache) - nums[i]);
+        }
+
+        cache.insert((i, has), best);
+        best
+    }
+
+    dp(&prices, 0, false, &mut HashMap::new())
+}
+
+pub fn max_profit(prices: Vec<i32>) -> i32 {
+    let n = prices.len();
+    let mut dp = vec![vec![0; 2]; n + 2];
+
+    for i in (0..n).rev() {
+        for j in (0..2).rev() {
+            let has = j != 0;
+            let mut best = dp[i + 1][has as usize];
+            if has {
+                best = best.max(dp[i + 2][!has as usize] + prices[i]);
+            } else {
+                best = best.max(dp[i + 1][!has as usize] - prices[i]);
+            }
+
+            dp[i][j] = best;
+        }
+    }
+
+    dp[0][0]
+}
+
+pub fn max_profit2(prices: Vec<i32>, fee: i32) -> i32 {
+    let n = prices.len();
+    let mut dp = [0; 2];
+
+    for i in (0..n).rev() {
+        for j in (0..2).rev() {
+            if j == 1 {
+                dp[j] = dp[j].max(dp[0] + prices[i] - fee);
+            } else {
+                dp[j] = dp[j].max(dp[1] - prices[i]);
+            }
+        }
+    }
+
+    dp[0]
+}
+
+pub fn max_profit3_top_down(prices: Vec<i32>) -> i32 {
+    use std::collections::HashMap;
+
+    fn dp(
+        prices: &Vec<i32>,
+        i: usize,
+        has: bool,
+        count: i32,
+        cache: &mut HashMap<(usize, bool, i32), i32>,
+    ) -> i32 {
+        if i >= prices.len() {
+            return 0;
+        }
+
+        if count > 2 {
+            return -100_000;
+        }
+
+        if let Some(&ans) = cache.get(&(i, has, count)) {
+            return ans;
+        }
+
+        let mut best = dp(prices, i + 1, has, count, cache);
+        if has {
+            best = best.max(dp(prices, i + 1, !has, count, cache) + prices[i]);
+        } else {
+            best = best.max(dp(prices, i + 1, !has, count + 1, cache) - prices[i]);
+        }
+
+        cache.insert((i, has, count), best);
+        best
+    }
+
+    dp(&prices, 0, false, 0, &mut HashMap::new())
+}
+
+pub fn max_profit3(prices: Vec<i32>) -> i32 {
+    let n = prices.len();
+    let k = 2;
+    let mut dp = vec![vec![vec![-100_000; k + 2]; 2]; n + 1];
+
+    for i in (0..=n).rev() {
+        for j in 0..2 {
+            for l in (0..=k).rev() {
+                if i >= prices.len() {
+                    dp[i][j][l] = 0;
+                    continue;
+                }
+
+                if l > 2 {
+                    dp[i][j][l] = -100_000;
+                    continue;
+                }
+                let has = j != 0;
+                let mut best = dp[i + 1][has as usize][l];
+                if has {
+                    best = best.max(dp[i + 1][!has as usize][l] + prices[i]);
+                } else {
+                    best = best.max(dp[i + 1][!has as usize][l + 1] - prices[i]);
+                }
+
+                dp[i][j][l] = best;
+            }
+        }
+    }
+
+    dp[0][0][0]
+}
+
+pub fn max_profit4(k: i32, prices: Vec<i32>) -> i32 {
+    let n = prices.len();
+    let k = k as usize;
+    let mut dp = vec![vec![vec![0; k + 2]; 2]; n + 1];
+
+    for i in (0..n).rev() {
+        for j in 0..2 {
+            for l in (0..=k).rev() {
+                if l > k {
+                    dp[i][j][l] = -100_000;
+                    continue;
+                }
+                let has = j != 0;
+                let mut best = dp[i + 1][has as usize][l];
+                if has {
+                    best = best.max(dp[i + 1][!has as usize][l] + prices[i]);
+                } else {
+                    best = best.max(dp[i + 1][!has as usize][l + 1] - prices[i]);
+                }
+
+                dp[i][j][l] = best;
+            }
+        }
+    }
+
+    dp[0][0][0]
+}
 
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
@@ -358,5 +506,5 @@ fn main() {
         .without_time()
         .init();
 
-    //t1a(max_profit);
+    t2a(max_profit4);
 }
