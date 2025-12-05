@@ -441,62 +441,59 @@ pub fn max_profit3_top_down(prices: Vec<i32>) -> i32 {
 pub fn max_profit3(prices: Vec<i32>) -> i32 {
     let n = prices.len();
     let k = 2;
-    let mut dp = vec![vec![vec![-100_000; k + 2]; 2]; n + 1];
+    let mut dp = vec![vec![0; 2]; k + 2];
 
-    for i in (0..=n).rev() {
-        for j in 0..2 {
-            for l in (0..=k).rev() {
-                if i >= prices.len() {
-                    dp[i][j][l] = 0;
-                    continue;
-                }
-
-                if l > 2 {
-                    dp[i][j][l] = -100_000;
-                    continue;
-                }
-                let has = j != 0;
-                let mut best = dp[i + 1][has as usize][l];
-                if has {
-                    best = best.max(dp[i + 1][!has as usize][l] + prices[i]);
+    for i in (0..n).rev() {
+        for l in (0..=k).rev() {
+            for j in 0..2 {
+                if j == 1 {
+                    dp[l][j] = dp[l][j].max(dp[l][0] + prices[i]);
                 } else {
-                    best = best.max(dp[i + 1][!has as usize][l + 1] - prices[i]);
+                    dp[l][j] = dp[l][j].max(dp[l + 1][1] - prices[i]);
                 }
-
-                dp[i][j][l] = best;
             }
         }
     }
 
-    dp[0][0][0]
+    dp[0][0]
 }
 
 pub fn max_profit4(k: i32, prices: Vec<i32>) -> i32 {
     let n = prices.len();
     let k = k as usize;
-    let mut dp = vec![vec![vec![0; k + 2]; 2]; n + 1];
+    let mut dp = vec![vec![0; 2]; k + 2];
 
     for i in (0..n).rev() {
-        for j in 0..2 {
-            for l in (0..=k).rev() {
-                if l > k {
-                    dp[i][j][l] = -100_000;
-                    continue;
-                }
-                let has = j != 0;
-                let mut best = dp[i + 1][has as usize][l];
-                if has {
-                    best = best.max(dp[i + 1][!has as usize][l] + prices[i]);
+        for l in (0..=k).rev() {
+            for j in 0..2 {
+                if j == 1 {
+                    dp[l][j] = dp[l][j].max(dp[l][0] + prices[i]);
                 } else {
-                    best = best.max(dp[i + 1][!has as usize][l + 1] - prices[i]);
+                    dp[l][j] = dp[l][j].max(dp[l + 1][1] - prices[i]);
                 }
-
-                dp[i][j][l] = best;
             }
         }
     }
 
-    dp[0][0][0]
+    dp[0][0]
+}
+
+pub fn count_partitions(nums: Vec<i32>) -> i32 {
+    let mut presums = vec![nums[0]];
+    for &num in nums.iter().skip(1) {
+        presums.push(num + presums[presums.len() - 1]);
+    }
+
+    let mut ans = 0;
+    let n = nums.len();
+    for i in 0..n - 1 {
+        let l = presums[i];
+        let r = presums[n - 1] - l;
+        if (r - l).abs() % 2 == 0 {
+            ans += 1;
+        }
+    }
+    ans
 }
 
 fn main() {
@@ -506,5 +503,5 @@ fn main() {
         .without_time()
         .init();
 
-    t2a(max_profit4);
+    t1a(count_partitions);
 }
