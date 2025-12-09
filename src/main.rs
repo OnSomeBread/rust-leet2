@@ -1,6 +1,9 @@
 #![allow(clippy::needless_pass_by_value)]
 #![allow(clippy::needless_range_loop)]
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 #[allow(unused_imports)]
 use itertools::Itertools;
 #[allow(unused_imports)]
@@ -496,6 +499,20 @@ pub fn count_partitions(nums: Vec<i32>) -> i32 {
     ans
 }
 
+pub fn count_triples(n: i32) -> i32 {
+    let mut ans = 0;
+    for a in 1..=n {
+        for b in a + 1..=n {
+            let c2 = a * a + b * b;
+            let t = (c2 as f64).sqrt();
+            if (t - t.round()).abs() <= 1e-6 && c2 <= n * n {
+                ans += 2;
+            }
+        }
+    }
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -503,5 +520,5 @@ fn main() {
         .without_time()
         .init();
 
-    t1a(count_partitions);
+    t1a(count_triples);
 }
