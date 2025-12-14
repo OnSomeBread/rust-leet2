@@ -4,6 +4,7 @@
 [build]
 rustflags = [
     "-Ctarget-cpu=native",
+    "-Clink-arg=-fuse-ld=lld",
     "-Cdebuginfo=0",
     "-Zthreads=24",
     "-Cforce-frame-pointers=no",
