@@ -1,6 +1,6 @@
 #![allow(unused)]
 use serde::de::DeserializeOwned;
-use tracing::info;
+use tracing::{error, info};
 
 #[macro_export]
 macro_rules! vecvec {
@@ -110,7 +110,7 @@ where
         if v1 == v2 {
             info!("PASSED");
         } else {
-            info!("FAILED {:?} {:?}", v1, v2);
+            error!("FAILED FOUND: {:?} EXPECTED: {:?}", v1, v2);
         }
     }
 }
@@ -135,7 +135,7 @@ where
         if v1 == v2 {
             info!("PASSED");
         } else {
-            info!("FAILED {:?} {:?}", v1, v2);
+            error!("FAILED FOUND: {:?} EXPECTED: {:?}", v1, v2);
         }
     }
 }
@@ -164,7 +164,7 @@ where
         if v1 == v2 {
             info!("PASSED");
         } else {
-            info!("FAILED {:?} {:?}", v1, v2);
+            error!("FAILED FOUND: {:?} EXPECTED: {:?}", v1, v2);
         }
     }
 }
@@ -199,7 +199,7 @@ where
         if v1 == v2 {
             info!("PASSED");
         } else {
-            info!("FAILED {:?} {:?}", v1, v2);
+            error!("FAILED FOUND: {:?} EXPECTED: {:?}", v1, v2);
         }
     }
 }

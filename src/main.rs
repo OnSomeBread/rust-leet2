@@ -513,6 +513,54 @@ pub fn count_triples(n: i32) -> i32 {
     ans
 }
 
+pub fn chef(n: i32, p: i32, k: i32) -> i32 {
+    let mut day = 1;
+    for i in 0..k {
+        let mut val = i;
+        while val < n {
+            if val == p {
+                return day;
+            }
+            day += 1;
+            val += k;
+        }
+    }
+    -1
+}
+
+pub fn best_closing_time(customers: String) -> i32 {
+    let mut cust = 0;
+    for c in customers.chars() {
+        if c == 'Y' {
+            cust += 1;
+        }
+    }
+
+    let mut smallest_penalty = i32::MAX;
+    let mut best_closing_time = 0;
+    let mut no_cust = 0;
+    for (i, c) in customers.chars().enumerate() {
+        let penalty = no_cust + cust;
+
+        if penalty < smallest_penalty {
+            smallest_penalty = penalty;
+            best_closing_time = i;
+        }
+
+        if c == 'Y' {
+            cust -= 1;
+        } else {
+            no_cust += 1;
+        }
+    }
+
+    if no_cust < smallest_penalty {
+        customers.len() as i32
+    } else {
+        best_closing_time as i32
+    }
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -520,5 +568,5 @@ fn main() {
         .without_time()
         .init();
 
-    t1a(count_triples);
+    t1a(best_closing_time);
 }
