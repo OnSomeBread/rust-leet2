@@ -1,18 +1,9 @@
-#![allow(clippy::needless_pass_by_value)]
-#![allow(clippy::needless_range_loop)]
+#![allow(clippy::needless_pass_by_value, clippy::needless_range_loop)]
 
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-#[allow(unused_imports)]
-use itertools::Itertools;
-#[allow(unused_imports)]
-use rayon::prelude::*;
-#[allow(unused_imports)]
-use tracing::info;
-
 mod first_4k_lines;
-
 mod tests;
 
 #[allow(unused)]
@@ -561,6 +552,131 @@ pub fn best_closing_time(customers: String) -> i32 {
     }
 }
 
+pub fn maximum_happiness_sum(mut happiness: Vec<i32>, k: i32) -> i64 {
+    happiness.sort_unstable_by(|a, b| b.cmp(a));
+
+    let mut ans = 0;
+    for (i, child) in happiness.iter().enumerate().take(k as usize) {
+        ans += (*child as i64 - i as i64).max(0);
+    }
+    ans
+}
+
+pub fn minimum_boxes(apple: Vec<i32>, mut capacity: Vec<i32>) -> i32 {
+    capacity.sort_unstable_by(|a, b| b.cmp(a));
+    let mut apples = apple.iter().sum::<i32>();
+
+    for (i, c) in capacity.iter().enumerate() {
+        apples -= *c;
+        if apples <= 0 {
+            return i as i32 + 1;
+        }
+    }
+    -1
+}
+
+pub fn min_deletion_size(strs: Vec<String>) -> i32 {
+    let strs: Vec<Vec<char>> = strs.iter().map(|x| x.chars().collect()).collect();
+    let mut ans = 0;
+    for j in 0..strs[0].len() {
+        let mut prev = strs[0][j];
+        for i in 1..strs.len() {
+            if prev > strs[i][j] {
+                ans += 1;
+                break;
+            }
+            prev = strs[i][j];
+        }
+    }
+    ans
+}
+
+pub fn max_two_events(mut events: Vec<Vec<i32>>) -> i32 {
+    events.sort_unstable();
+    use std::cmp::Reverse;
+    use std::collections::BinaryHeap;
+
+    let mut bh: BinaryHeap<Reverse<(i32, i32)>> = BinaryHeap::new();
+    let mut ans = 0;
+    let mut best = 0;
+    for e in events {
+        while let Some(Reverse((end_time, event_value))) = bh.peek()
+            && *end_time < e[0]
+        {
+            best = best.max(*event_value);
+            bh.pop();
+        }
+
+        ans = ans.max(best + e[2]);
+        bh.push(Reverse((e[1], e[2])));
+    }
+    ans
+}
+
+// pub fn min_deletion_size2(strs: Vec<String>) -> i32 {
+//     let strs: Vec<Vec<char>> = strs.iter().map(|x| x.chars().collect()).collect();
+//     let mut ans = 0;
+//     for j in 0..strs[0].len() {
+//         let mut prev = strs[0][j];
+//         let mut sorted = true;
+//         for i in 1..strs.len() {
+//             if prev > strs[i][j] {
+//                 ans += 1;
+//                 sorted = false;
+//                 break;
+//             }
+//             prev = strs[i][j];
+//         }
+//         if sorted {
+//             return ans;
+//         }
+//     }
+//     ans
+// }
+
+pub fn most_booked(n: i32, mut meetings: Vec<Vec<i32>>) -> i32 {
+    use std::cmp::Reverse as Rev;
+    use std::collections::BinaryHeap;
+    meetings.sort_unstable_by_key(|x| x[0]);
+    let n = n as usize;
+
+    let mut room_used_count = vec![0; n];
+    let mut open_rooms: BinaryHeap<Rev<usize>> = (0..n).map(Rev).collect();
+    let mut unopen_rooms: BinaryHeap<Rev<(u32, usize)>> = BinaryHeap::new();
+
+    for meeting in meetings {
+        let (start, end) = (meeting[0] as u32, meeting[1] as u32);
+
+        while let Some(&Rev((meeting_time, room))) = unopen_rooms.peek()
+            && start >= meeting_time
+        {
+            unopen_rooms.pop();
+            open_rooms.push(Rev(room));
+        }
+
+        let (room, end_time) = if let Some(Rev(room)) = open_rooms.pop() {
+            (room, end)
+        } else {
+            let Rev((meeting_time, room)) = unopen_rooms.pop().unwrap();
+            (room, meeting_time + end - start)
+        };
+
+        room_used_count[room] += 1;
+        unopen_rooms.push(Rev((end_time, room)));
+    }
+
+    let mut most_used_room = 0;
+    let mut most_used_count = 0;
+    for (room, &count) in room_used_count.iter().enumerate() {
+        if count > most_used_count {
+            most_used_count = count;
+            most_used_room = room;
+        }
+    }
+
+    most_used_room as i32
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -568,5 +684,5 @@ fn main() {
         .without_time()
         .init();
 
-    t1a(best_closing_time);
+    t2a(most_booked);
 }
