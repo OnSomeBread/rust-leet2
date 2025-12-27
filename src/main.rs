@@ -1,4 +1,5 @@
 #![allow(clippy::needless_pass_by_value, clippy::needless_range_loop)]
+#![feature(fn_traits)]
 
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -684,5 +685,5 @@ fn main() {
         .without_time()
         .init();
 
-    t2a(most_booked);
+    ta(most_booked);
 }
