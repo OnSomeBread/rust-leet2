@@ -3,7 +3,7 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-mod first_4k_lines;
+//mod first_4k_lines;
 mod tests;
 
 #[allow(unused)]
