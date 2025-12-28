@@ -1,4 +1,3 @@
-#![allow(unused)]
 use rayon::prelude::*;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
@@ -43,7 +42,10 @@ where
 {
     fn test_print(&self) {
         for arg1 in TESTS.lines() {
-            println!("{:?}", self.call((serde_json::from_str(arg1).unwrap(),)));
+            println!(
+                "ans = {:?}",
+                self.call((serde_json::from_str(arg1).unwrap(),))
+            );
         }
     }
 }
@@ -61,7 +63,7 @@ where
         while let (Some(arg1), Some(arg2)) = (lines.next(), lines.next()) {
             let a1 = serde_json::from_str(arg1).unwrap();
             let a2 = serde_json::from_str(arg2).unwrap();
-            println!("{:?}", self.call((a1, a2)));
+            println!("ans = {:?}", self.call((a1, a2)));
         }
     }
 }
@@ -82,7 +84,7 @@ where
             let a1 = serde_json::from_str(arg1).unwrap();
             let a2 = serde_json::from_str(arg2).unwrap();
             let a3 = serde_json::from_str(arg3).unwrap();
-            println!("{:?}", self.call((a1, a2, a3)));
+            println!("ans = {:?}", self.call((a1, a2, a3)));
         }
     }
 }
@@ -106,13 +108,13 @@ where
             let a2 = serde_json::from_str(arg2).unwrap();
             let a3 = serde_json::from_str(arg3).unwrap();
             let a4 = serde_json::from_str(arg4).unwrap();
-            println!("{:?}", self.call((a1, a2, a3, a4)));
+            println!("ans = {:?}", self.call((a1, a2, a3, a4)));
         }
     }
 }
 
 pub trait TestAnswers<Args> {
-    fn parse_tests(args_count: u8) -> (Vec<(Vec<&'static str>, &'static str)>) {
+    fn parse_tests(args_count: u8) -> Vec<(Vec<&'static str>, &'static str)> {
         let mut tests = TESTS.lines();
         let mut answers = ANSWERS.lines();
 
@@ -186,9 +188,9 @@ where
     fn test(&self) {
         Self::parse_tests(3).par_iter().for_each(|(a, ans)| {
             let v1 = self.call((
+                serde_json::from_str(a[0]).unwrap(),
                 serde_json::from_str(a[1]).unwrap(),
                 serde_json::from_str(a[2]).unwrap(),
-                serde_json::from_str(a[3]).unwrap(),
             ));
             let v2 = serde_json::from_str(ans).unwrap();
             if v1 == v2 {
@@ -212,10 +214,10 @@ where
     fn test(&self) {
         Self::parse_tests(4).par_iter().for_each(|(a, ans)| {
             let v1 = self.call((
+                serde_json::from_str(a[0]).unwrap(),
                 serde_json::from_str(a[1]).unwrap(),
                 serde_json::from_str(a[2]).unwrap(),
                 serde_json::from_str(a[3]).unwrap(),
-                serde_json::from_str(a[4]).unwrap(),
             ));
             let v2 = serde_json::from_str(ans).unwrap();
             if v1 == v2 {
@@ -227,16 +229,13 @@ where
     }
 }
 
-pub fn t<F, Args>(f: F)
+pub fn t<F, Args>(f: F, print: bool)
 where
-    F: Test<Args>,
+    F: TestAnswers<Args> + Test<Args>,
 {
-    f.test_print();
-}
-
-pub fn ta<F, Args>(f: F)
-where
-    F: TestAnswers<Args>,
-{
-    f.test();
+    if print {
+        f.test_print();
+    } else {
+        f.test();
+    }
 }
