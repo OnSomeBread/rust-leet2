@@ -678,6 +678,48 @@ pub fn most_booked(n: i32, mut meetings: Vec<Vec<i32>>) -> i32 {
     most_used_room as i32
 }
 
+pub fn count_negatives(grid: Vec<Vec<i32>>) -> i32 {
+    let mut ans = 0;
+    let n = grid[0].len();
+    let mut prev = n;
+    for i in 0..grid.len() {
+        for j in (0..prev).rev() {
+            if grid[i][j] >= 0 {
+                ans += n - j - 1;
+                prev = j + 1;
+                break;
+            }
+        }
+        if grid[i][0] < 0 {
+            ans += n;
+        }
+    }
+    ans as i32
+}
+
+pub fn max_profit5(prices: Vec<i32>, strategy: Vec<i32>, k: i32) -> i64 {
+    let k = k as usize;
+
+    let mut presums_prices = vec![0];
+    let mut presums_pricesxstrat = vec![0];
+    for (&price, &strat) in prices.iter().zip(strategy.iter()) {
+        presums_prices.push(price as i64 + presums_prices.last().unwrap());
+        presums_pricesxstrat
+            .push(price as i64 * strat as i64 + presums_pricesxstrat.last().unwrap());
+    }
+
+    let s = *presums_pricesxstrat.last().unwrap();
+    let mut ans = s;
+    for i in 0..=(prices.len() - k) {
+        let left = presums_pricesxstrat[i];
+        let mid = presums_prices[i + k] - presums_prices[i + k / 2];
+        let right = s - presums_pricesxstrat[i + k];
+
+        ans = ans.max(left + right + mid);
+    }
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -685,5 +727,5 @@ fn main() {
         .without_time()
         .init();
 
-    ta(most_booked);
+    t(max_profit5, false);
 }
