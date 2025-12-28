@@ -43,7 +43,7 @@ where
 {
     fn test_print(&self) {
         for arg1 in TESTS.lines() {
-            println!("{:?}", self.call(serde_json::from_str(arg1).unwrap()));
+            println!("{:?}", self.call((serde_json::from_str(arg1).unwrap(),)));
         }
     }
 }
@@ -141,7 +141,7 @@ where
 {
     fn test(&self) {
         Self::parse_tests(1).par_iter().for_each(|(a, ans)| {
-            let v1 = self.call(serde_json::from_str(a[0]).unwrap());
+            let v1 = self.call((serde_json::from_str::<T1>(a[0]).unwrap(),));
             let v2 = serde_json::from_str(ans).unwrap();
             if v1 == v2 {
                 info!("PASSED");
