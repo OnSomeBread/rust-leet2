@@ -727,5 +727,5 @@ fn main() {
         .without_time()
         .init();
 
-    t(max_profit5, false);
+    ta(max_profit5);
 }

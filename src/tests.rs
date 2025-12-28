@@ -1,3 +1,4 @@
+#![allow(unused)]
 use rayon::prelude::*;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
@@ -229,13 +230,16 @@ where
     }
 }
 
-pub fn t<F, Args>(f: F, print: bool)
+pub fn t<F, Args>(f: F)
 where
-    F: TestAnswers<Args> + Test<Args>,
+    F: Test<Args>,
 {
-    if print {
-        f.test_print();
-    } else {
-        f.test();
-    }
+    f.test_print();
+}
+
+pub fn ta<F, Args>(f: F)
+where
+    F: TestAnswers<Args>,
+{
+    f.test();
 }
