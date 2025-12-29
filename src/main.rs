@@ -7,6 +7,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 //mod first_4k_lines;
 mod tests;
 
+use itertools::Itertools;
 #[allow(unused)]
 #[allow(clippy::wildcard_imports)]
 use tests::*;
@@ -720,12 +721,74 @@ pub fn max_profit5(prices: Vec<i32>, strategy: Vec<i32>, k: i32) -> i64 {
     ans
 }
 
+pub fn validate_coupons(
+    code: Vec<String>,
+    business_line: Vec<String>,
+    is_active: Vec<bool>,
+) -> Vec<String> {
+    let mut ans = vec![];
+    let valid_categories: std::collections::HashMap<&str, u8> = vec![
+        ("electronics", 0),
+        ("grocery", 1),
+        ("pharmacy", 2),
+        ("restaurant", 3),
+    ]
+    .into_iter()
+    .collect();
+
+    for (c, b, &a) in itertools::izip!(&code, &business_line, &is_active) {
+        if a && let Some(&val) = valid_categories.get(b.as_str())
+            && !c.is_empty()
+            && c.chars().all(|x| x.is_alphanumeric() || x == '_')
+        {
+            ans.push((c.clone(), val));
+        }
+    }
+
+    ans.into_iter()
+        .sorted_unstable_by(|a, b| a.1.cmp(&b.1).then(a.0.cmp(&b.0)))
+        .map(|x| x.0)
+        .collect()
+}
+
+pub fn count_covered_buildings(n: i32, buildings: Vec<Vec<i32>>) -> i32 {
+    let n = n as usize + 1;
+    let mut max_row = vec![0; n];
+    let mut min_row = vec![n; n];
+    let mut max_col = vec![0; n];
+    let mut min_col = vec![n; n];
+    for b in &buildings {
+        let x = b[0] as usize;
+        let y = b[1] as usize;
+
+        max_row[y] = max_row[y].max(x);
+        min_row[y] = min_row[y].min(x);
+
+        max_col[x] = max_col[x].max(y);
+        min_col[x] = min_col[x].min(y);
+    }
+
+    let mut ans = 0;
+
+    for b in &buildings {
+        let x = b[0] as usize;
+        let y = b[1] as usize;
+
+        if x < max_row[y] && x > min_row[y] && y < max_col[x] && y > min_col[x] {
+            ans += 1;
+        }
+    }
+
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
         .with_writer(non_blocking)
         .without_time()
+        .with_target(false)
         .init();
 
-    ta(max_profit5);
+    ta(count_covered_buildings);
 }
