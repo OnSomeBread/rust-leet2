@@ -782,6 +782,61 @@ pub fn count_covered_buildings(n: i32, buildings: Vec<Vec<i32>>) -> i32 {
     ans
 }
 
+pub fn num_magic_squares_inside(grid: Vec<Vec<i32>>) -> i32 {
+    fn check(grid: &[Vec<i32>], i: usize, j: usize) -> bool {
+        let mut v = [false; 10];
+        for ni in i..i + 3 {
+            for nj in j..j + 3 {
+                if grid[ni][nj] > 9 || grid[ni][nj] == 0 || v[grid[ni][nj] as usize] {
+                    return false;
+                }
+                v[grid[ni][nj] as usize] = true;
+            }
+        }
+
+        let s = grid[i][j] + grid[i + 1][j + 1] + grid[i + 2][j + 2];
+        let s2 = grid[i][j + 2] + grid[i + 1][j + 1] + grid[i + 2][j];
+        if s != s2 {
+            return false;
+        }
+
+        for ni in i..i + 3 {
+            let mut row_sum = 0;
+            let mut col_sum = 0;
+            for nj in j..j + 3 {
+                row_sum += grid[ni][nj];
+                col_sum += grid[i + nj - j][j + ni - i];
+            }
+
+            if s != row_sum || s != col_sum {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    let m = grid.len();
+    if m < 3 {
+        return 0;
+    }
+    let n = grid[0].len();
+    if n < 3 {
+        return 0;
+    }
+
+    let mut ans = 0;
+    for i in 0..grid.len() - 2 {
+        for j in 0..grid[i].len() - 2 {
+            if check(&grid, i, j) {
+                ans += 1;
+            }
+        }
+    }
+
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -790,5 +845,5 @@ fn main() {
         .with_target(false)
         .init();
 
-    ta(count_covered_buildings);
+    ta(num_magic_squares_inside);
 }
