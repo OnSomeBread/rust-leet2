@@ -837,6 +837,65 @@ pub fn num_magic_squares_inside(grid: Vec<Vec<i32>>) -> i32 {
     ans
 }
 
+pub fn latest_day_to_cross(row: i32, col: i32, cells: Vec<Vec<i32>>) -> i32 {
+    let (rows, cols) = (row as usize, col as usize);
+    let mut uf: Vec<usize> = (0..(rows * cols + 2)).collect();
+    let mut rank: Vec<i32> = vec![1; rows * cols + 2];
+
+    const fn union_find(uf: &mut [usize], mut i: usize) -> usize {
+        while uf[i] != i {
+            uf[i] = uf[uf[i]];
+            i = uf[i];
+        }
+        i
+    }
+
+    const fn union_parents(uf: &mut [usize], rank: &mut [i32], c1: usize, c2: usize) {
+        let (p1, p2) = (union_find(uf, c1), union_find(uf, c2));
+        if rank[p1] < rank[p2] {
+            uf[p1] = uf[p2];
+            rank[p2] += rank[p1];
+        } else {
+            uf[p2] = uf[p1];
+            rank[p1] += rank[p2];
+        }
+    }
+
+    let mut grid = vec![vec![false; cols]; rows];
+    let dirs = [(1, 0), (-1, 0), (0, 1), (0, -1)];
+    for (idx, cell) in cells.iter().enumerate().rev() {
+        let (i, j) = (cell[0] as usize - 1, cell[1] as usize - 1);
+        grid[i][j] = true;
+        let curr = i * cols + j + 1;
+
+        for &(di, dj) in &dirs {
+            let (ni, nj) = (i as i32 + di, j as i32 + dj);
+            if (0..row).contains(&ni) && (0..col).contains(&nj) && grid[ni as usize][nj as usize] {
+                union_parents(
+                    &mut uf,
+                    &mut rank,
+                    curr,
+                    ni as usize * cols + nj as usize + 1,
+                );
+            }
+        }
+
+        if i == 0 {
+            union_parents(&mut uf, &mut rank, 0, curr);
+        }
+
+        if i == rows - 1 {
+            union_parents(&mut uf, &mut rank, rows * cols + 1, curr);
+        }
+
+        if union_find(&mut uf, 0) == union_find(&mut uf, rows * cols + 1) {
+            return idx as i32;
+        }
+    }
+
+    0
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -845,5 +904,5 @@ fn main() {
         .with_target(false)
         .init();
 
-    ta(num_magic_squares_inside);
+    t(latest_day_to_cross);
 }

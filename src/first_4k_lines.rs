@@ -2449,7 +2449,7 @@ pub const fn count_operations(mut num1: i32, mut num2: i32) -> i32 {
 
 #[derive(Default)]
 struct TrieNode {
-    pub hm: std::collections::HashMap<char, Self>,
+    pub children: [Option<Box<Self>>; 26],
     pub is_word_ending: bool,
 }
 
@@ -2464,36 +2464,41 @@ impl Trie {
     }
 
     fn insert(&mut self, word: String) {
-        let mut traverse = &mut self.root.hm;
-        for (i, letter) in word.chars().enumerate() {
-            let e = traverse.entry(letter.to_ascii_lowercase()).or_default();
-            if i == word.len() - 1 {
-                e.is_word_ending = true;
-            }
-            traverse = &mut e.hm;
+        let mut traverse = &mut self.root.children;
+        for letter in word.chars().take(word.len() - 1) {
+            let e = traverse[(letter.to_ascii_lowercase() as u8 - b'a') as usize]
+                .get_or_insert_default();
+            traverse = &mut e.children;
         }
+
+        traverse[(word.chars().last().unwrap().to_ascii_lowercase() as u8 - b'a') as usize]
+            .get_or_insert_default()
+            .is_word_ending = true;
     }
 
     fn search(&self, word: String) -> bool {
-        let mut traverse = &self.root.hm;
-        for (i, letter) in word.chars().enumerate() {
-            if let Some(e) = traverse.get(&letter.to_ascii_lowercase()) {
-                if i == word.len() - 1 && !e.is_word_ending {
-                    return false;
-                }
-                traverse = &e.hm;
+        let mut traverse = &self.root.children;
+        for letter in word.chars().take(word.len() - 1) {
+            if let Some(e) = &traverse[(letter.to_ascii_lowercase() as u8 - b'a') as usize] {
+                traverse = &e.children;
             } else {
                 return false;
             }
         }
-        true
+
+        if let Some(e) =
+            &traverse[(word.chars().last().unwrap().to_ascii_lowercase() as u8 - b'a') as usize]
+        {
+            return e.is_word_ending;
+        }
+        false
     }
 
     fn starts_with(&self, prefix: String) -> bool {
-        let mut traverse = &self.root.hm;
+        let mut traverse = &self.root.children;
         for letter in prefix.chars() {
-            if let Some(e) = traverse.get(&letter.to_ascii_lowercase()) {
-                traverse = &e.hm;
+            if let Some(e) = &traverse[(letter.to_ascii_lowercase() as u8 - b'a') as usize] {
+                traverse = &e.children;
             } else {
                 return false;
             }
