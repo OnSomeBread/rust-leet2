@@ -896,6 +896,22 @@ pub fn latest_day_to_cross(row: i32, col: i32, cells: Vec<Vec<i32>>) -> i32 {
     0
 }
 
+pub fn plus_one(mut digits: Vec<i32>) -> Vec<i32> {
+    let mut i = digits.len() as i32 - 1;
+    while i >= 0 && digits[i as usize] == 9 {
+        digits[i as usize] = 0;
+        i -= 1;
+    }
+
+    if i == -1 {
+        digits.insert(0, 1);
+        return digits;
+    }
+
+    digits[i as usize] += 1;
+    digits
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -904,5 +920,5 @@ fn main() {
         .with_target(false)
         .init();
 
-    t(latest_day_to_cross);
+    ta(plus_one);
 }
