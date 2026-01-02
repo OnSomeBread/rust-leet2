@@ -912,6 +912,18 @@ pub fn plus_one(mut digits: Vec<i32>) -> Vec<i32> {
     digits
 }
 
+pub fn repeated_n_times(nums: Vec<i32>) -> i32 {
+    let mut v = vec![false; 10001];
+    for num in nums {
+        if v[num as usize] {
+            return num;
+        }
+        v[num as usize] = true;
+    }
+
+    0
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -920,5 +932,5 @@ fn main() {
         .with_target(false)
         .init();
 
-    ta(plus_one);
+    ta(repeated_n_times);
 }
