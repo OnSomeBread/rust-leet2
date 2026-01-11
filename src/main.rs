@@ -924,6 +924,193 @@ pub fn repeated_n_times(nums: Vec<i32>) -> i32 {
     0
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct TreeNode {
+    pub val: i32,
+    pub left: Option<Rc<RefCell<Self>>>,
+    pub right: Option<Rc<RefCell<Self>>>,
+}
+
+impl TreeNode {
+    #[inline]
+    pub const fn new(val: i32) -> Self {
+        Self {
+            val,
+            left: None,
+            right: None,
+        }
+    }
+}
+
+use std::cell::RefCell;
+use std::rc::Rc;
+pub fn max_level_sum(root: Option<Rc<RefCell<TreeNode>>>) -> i32 {
+    use std::collections::VecDeque;
+    let mut q = VecDeque::new();
+    if let Some(root) = root {
+        q.push_back(root);
+    }
+
+    let mut best = i32::MIN;
+    let mut level = 0;
+    let mut curr_level = 1;
+    while !q.is_empty() {
+        let mut values = VecDeque::new();
+        let mut curr = 0;
+        while let Some(front) = q.pop_front() {
+            curr += front.borrow().val;
+            if let Some(left) = &front.borrow().left {
+                values.push_back(left.clone());
+            }
+
+            if let Some(right) = &front.borrow().right {
+                values.push_back(right.clone());
+            }
+        }
+
+        q = values;
+        if curr > best {
+            best = curr;
+            level = curr_level;
+        }
+
+        curr_level += 1;
+    }
+
+    level
+}
+
+pub fn max_matrix_sum(matrix: Vec<Vec<i32>>) -> i64 {
+    let mut smallest = i32::MAX;
+    let mut neg = 0;
+    let mut s = 0;
+    for row in matrix {
+        for &value in &row {
+            if value < 0 {
+                neg += 1;
+            }
+            s += value.abs() as i64;
+            smallest = smallest.min(value.abs());
+        }
+    }
+
+    if neg % 2 == 0 && smallest != i32::MAX {
+        s
+    } else {
+        s - 2 * smallest as i64
+    }
+}
+
+pub fn max_product(root: Option<Rc<RefCell<TreeNode>>>) -> i32 {
+    fn dfs(root: &Rc<RefCell<TreeNode>>, sums: &mut Vec<i64>) -> i64 {
+        let left_sum = root
+            .borrow()
+            .left
+            .as_ref()
+            .map_or(0, |left| dfs(left, sums));
+
+        let right_sum = root
+            .borrow()
+            .right
+            .as_ref()
+            .map_or(0, |right| dfs(right, sums));
+
+        let val = root.borrow().val as i64 + left_sum + right_sum;
+        sums.push(val);
+        val
+    }
+
+    let mut sums = vec![];
+    let total = dfs(&root.unwrap(), &mut sums);
+
+    let mut ans = 0;
+    for &sum in &sums {
+        ans = ans.max((total - sum) * sum);
+    }
+    (ans % (1e9 as i64 + 7)) as i32
+}
+
+pub fn minimum_delete_sum(s1: String, s2: String) -> i32 {
+    let s1: Vec<char> = s1.chars().collect();
+    let s2: Vec<char> = s2.chars().collect();
+    let m = s1.len();
+    let n = s2.len();
+    let total =
+        s1.iter().map(|&x| x as i32).sum::<i32>() + s2.iter().map(|&x| x as i32).sum::<i32>();
+
+    let mut dp = vec![vec![0; n + 1]; m + 1];
+    for i in 1..=m {
+        for j in 1..=n {
+            dp[i][j] = if s1[i - 1] == s2[j - 1] {
+                s1[i - 1] as i32 + dp[i - 1][j - 1]
+            } else {
+                dp[i - 1][j].max(dp[i][j - 1])
+            }
+        }
+    }
+
+    total - 2 * dp[m][n]
+}
+
+fn generate_sieve(n: usize) -> Vec<bool> {
+    let mut ans = vec![true; n + 1];
+    ans[0] = false;
+    ans[1] = false;
+    for i in 2..=((n as i32 as f64).sqrt() as usize) {
+        if ans[i] {
+            let mut j = i * 2;
+            while j <= n {
+                ans[j] = false;
+                j += i;
+            }
+        }
+    }
+    ans
+}
+
+pub fn sum_four_divisors(nums: Vec<i32>) -> i32 {
+    let primes = generate_sieve(*nums.iter().max().unwrap() as usize);
+
+    let mut ans = 0;
+    for num in nums {
+        let p = ((num as f64).cbrt().round()) as i32;
+        if p * p * p == num && primes[p as usize] {
+            ans += p + p * p + num + 1;
+            continue;
+        }
+
+        for i in 2..=(num as f64).sqrt() as i32 {
+            if num % i == 0 {
+                let j = num / i;
+
+                if i != j && primes[i as usize] && primes[j as usize] {
+                    ans += num + 1 + i + j;
+                }
+                break;
+            }
+        }
+    }
+    ans
+}
+
+pub fn max_dot_product(nums1: Vec<i32>, nums2: Vec<i32>) -> i32 {
+    let m = nums1.len();
+    let n = nums2.len();
+    let mut dp = vec![vec![i32::MIN / 1000; n + 1]; m + 1];
+
+    for i in (0..m).rev() {
+        for j in (0..n).rev() {
+            let skip = dp[i + 1][j].max(dp[i][j + 1]);
+            let take = nums1[i] * nums2[j];
+            let take_and_continue = dp[i + 1][j + 1] + take;
+
+            dp[i][j] = skip.max(take).max(take_and_continue);
+        }
+    }
+
+    dp[0][0]
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -932,5 +1119,5 @@ fn main() {
         .with_target(false)
         .init();
 
-    ta(repeated_n_times);
+    ta(max_dot_product);
 }
