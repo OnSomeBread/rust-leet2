@@ -1111,6 +1111,44 @@ pub fn max_dot_product(nums1: Vec<i32>, nums2: Vec<i32>) -> i32 {
     dp[0][0]
 }
 
+pub fn make_fancy_string(s: String) -> String {
+    if s.len() <= 2 {
+        return s;
+    }
+    let mut ans = vec![];
+    let s: Vec<char> = s.chars().collect();
+    ans.push(s[0]);
+    ans.push(s[1]);
+
+    for &letter in s.iter().skip(2) {
+        if !(letter == ans[ans.len() - 1] && letter == ans[ans.len() - 2]) {
+            ans.push(letter);
+        }
+    }
+    ans.iter().collect()
+}
+
+pub fn successful_pairs(spells: Vec<i32>, mut potions: Vec<i32>, success: i64) -> Vec<i32> {
+    potions.sort_unstable();
+
+    let mut ans = vec![];
+    for spell in spells {
+        ans.push(
+            (potions.len() - potions.partition_point(|x| spell as i64 * (*x as i64) < success))
+                as i32,
+        );
+    }
+    ans
+}
+
+pub fn min_time_to_visit_all_points(points: Vec<Vec<i32>>) -> i32 {
+    let mut ans = 0;
+    for (p1, p2) in points.iter().tuple_windows() {
+        ans += (p1[0] - p2[0]).abs().max((p1[1] - p2[1]).abs());
+    }
+    ans
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -1119,5 +1157,5 @@ fn main() {
         .with_target(false)
         .init();
 
-    ta(max_dot_product);
+    ta(min_time_to_visit_all_points);
 }
