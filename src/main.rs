@@ -1149,6 +1149,39 @@ pub fn min_time_to_visit_all_points(points: Vec<Vec<i32>>) -> i32 {
     ans
 }
 
+pub fn min_distance(word1: String, word2: String) -> i32 {
+    let word1 = word1.as_bytes();
+    let word2 = word2.as_bytes();
+    let m = word1.len();
+    let n = word2.len();
+
+    let mut dp1 = vec![0; n + 1];
+    for j in 0..=n {
+        dp1[j] = (n - j) as i32;
+    }
+
+    for i in (0..m).rev() {
+        let mut dp = vec![0; n + 1];
+        dp[n] = (m - i) as i32;
+        for j in (0..n).rev() {
+            if word1[i] == word2[j] {
+                dp[j] = dp1[j + 1];
+                continue;
+            }
+
+            let remove = dp1[j] + 1;
+            let insert = dp[j + 1] + 1;
+            let replace = dp1[j + 1] + 1;
+
+            dp[j] = remove.min(insert).min(replace);
+        }
+
+        dp1 = dp;
+    }
+
+    dp1[0]
+}
+
 fn main() {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt()
@@ -1157,5 +1190,5 @@ fn main() {
         .with_target(false)
         .init();
 
-    ta(min_time_to_visit_all_points);
+    ta(min_distance);
 }
